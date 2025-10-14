@@ -1,0 +1,84 @@
+{
+  "forHer": [
+    {
+      "id": "bs-fantasy",
+      "name": "Britney Spears Fantasy",
+      "category": "Sweet & Fruity",
+      "notes": "Kiwi, Cupcake, Jasmine, White Chocolate",
+      "description": "A playful, irresistible scent that lingers in their memory long after you've left the room.",
+      "image": "https://example.com/images/bs-fantasy.jpg"
+    },
+    {
+      "id": "chanel-chance",
+      "name": "Chanel Chance",
+      "category": "Classic & Timeless",
+      "notes": "Pink Pepper, Jasmine, Amber Patchouli, Vanilla",
+      "description": "The scent of possibility. Bold, unexpected, utterly magnetic.",
+      "image": "https://example.com/images/chanel-chance.jpg"
+    },
+    {
+      "id": "dg-lightblue",
+      "name": "Dolce & Gabbana Light Blue",
+      "category": "Fresh & Citrus",
+      "notes": "Sicilian Lemon, Apple, Jasmine, Cedarwood",
+      "description": "Mediterranean sunshine bottled. Fresh, breezy, effortlessly captivating.",
+      "image": "https://example.com/images/dg-lightblue.jpg"
+    }
+  ],
+  "forHim": [
+    {
+      "id": "dior-sauvage",
+      "name": "Dior Sauvage",
+      "category": "Fresh & Spicy",
+      "notes": "Bergamot, Pepper, Ambroxan, Vanilla",
+      "description": "Wild sophistication. Untamed allure they'll never shake off.",
+      "image": "https://example.com/images/dior-sauvage.jpg"
+    },
+    {
+      "id": "armani-acqua",
+      "name": "Giorgio Armani Aqua di Gio",
+      "category": "Aquatic & Fresh",
+      "notes": "Marine Notes, Bergamot, Rosemary, Patchouli",
+      "description": "Ocean masculinity. Fresh, confident, eternally memorable.",
+      "image": "https://example.com/images/armani-acqua.jpg"
+    },
+    {
+      "id": "pr-onemillion",
+      "name": "Paco Rabanne One Million",
+      "category": "Spicy & Leather",
+      "notes": "Grapefruit, Mint, Blood Mandarin, Rose, Cinnamon, Leather, Amber",
+      "description": "Golden magnetism. Million-dollar appeal that never depreciates.",
+      "image": "https://example.com/images/pr-onemillion.jpg"
+    }
+  ],
+  "sizes": [
+    { "size": "10ml Vehicle Fragrance", "price": 40 },
+    { "size": "10ml Pen Spray", "price": 40 },
+    { "size": "10ml Glass Roller", "price": 40 },
+    { "size": "35ml Bottle", "price": 120 },
+    { "size": "50ml Bottle", "price": 140 },
+    { "size": "55ml Bottle", "price": 160 },
+    { "size": "100ml Room Diffuser", "price": 210 }
+  ],
+  "settings": {
+    "whatsappNumber": "27628989645",
+    "adminPassword": "perpetual2024",
+    "storeName": "Perpetual Linger",
+    "tagline": "They'll Never Forget",
+    "currency": "R",
+    "businessHours": {
+      "monday": "9:00 AM - 6:00 PM",
+      "tuesday": "9:00 AM - 6:00 PM",
+      "wednesday": "9:00 AM - 6:00 PM",
+      "thursday": "9:00 AM - 6:00 PM",
+      "friday": "9:00 AM - 6:00 PM",
+      "saturday": "10:00 AM - 4:00 PM",
+      "sunday": "Closed"
+    },
+    "socialMedia": {
+      "instagram": "#",
+      "facebook": "#",
+      "whatsapp": "https://wa.me/27628989645"
+    }
+  }
+}

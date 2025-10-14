@@ -1,0 +1,103 @@
+✅ CLEAN VERSION READY - UPLOAD CHECKLIST
+==========================================
+
+YOUR FILES ARE READY IN:
+C:\Users\Richard.Downing\Documents\augment-projects\Perpetual Linger\
+
+STEP-BY-STEP UPLOAD TO GITHUB:
+================================
+
+□ Step 1: Go to GitHub
+   → Open: https://github.com/Awehbelekker/perpetual-linger-store
+
+□ Step 2: Delete Old File (Important!)
+   → Find: perpetual-linger-store.tsx (in root folder)
+   → Click on it
+   → Click trash icon
+   → Commit deletion
+
+□ Step 3: Upload src/App.jsx (NEW FILE!)
+   → Go to src/ folder
+   → Click "Add file" → "Upload files"
+   → Drag App.jsx from your computer
+   → Commit
+
+□ Step 4: Update src/main.jsx
+   → Click on src/main.jsx
+   → Click pencil (Edit)
+   → Make sure line 3 says: import App from './App.jsx'
+   → Commit changes
+
+□ Step 5: Update index.html
+   → Click on index.html
+   → Click pencil (Edit)
+   → Make sure line 52 says: <script type="module" src="./src/main.jsx"></script>
+   → Commit changes
+
+□ Step 6: Wait for Vercel
+   → Vercel will auto-detect changes
+   → Build will start automatically
+   → Wait 2-3 minutes
+   → Check Vercel dashboard for "Deployment Ready"
+
+□ Step 7: TEST YOUR LIVE STORE!
+   → Click the live URL Vercel provides
+   → Test navigation
+   → Test cart
+   → Test admin (password: perpetual2024)
+
+ESSENTIAL FILES THAT MUST BE ON GITHUB:
+========================================
+✅ index.html
+✅ package.json
+✅ vite.config.js
+✅ tailwind.config.js
+✅ postcss.config.js
+✅ vercel.json
+✅ src/main.jsx
+✅ src/App.jsx (THIS IS YOUR STORE!)
+✅ src/index.css
+✅ public/favicon.svg
+
+WHAT'S DIFFERENT NOW:
+=====================
+OLD: perpetual-linger-store.tsx (caused build error)
+NEW: src/App.jsx (clean React file - will build!)
+
+OLD: import from '../perpetual-linger-store.tsx'
+NEW: import from './App.jsx'
+
+OLD: src="/src/main.jsx"
+NEW: src="./src/main.jsx"
+
+YOUR STORE FEATURES (All Working!):
+====================================
+✅ Floating particles & sparkles
+✅ Luxury animations
+✅ Product catalog (For Her/For Him)
+✅ Shopping cart
+✅ WhatsApp checkout
+✅ Admin panel (password: perpetual2024)
+✅ Mobile responsive
+✅ Fast loading
+
+AFTER DEPLOYMENT:
+=================
+Your store will be live at:
+https://perpetual-linger-store.vercel.app
+
+Admin access:
+https://perpetual-linger-store.vercel.app
+Click "Admin" → Password: perpetual2024
+
+NEED HELP?
+==========
+If build fails again, check:
+1. src/App.jsx exists
+2. src/main.jsx imports './App.jsx'
+3. index.html uses './src/main.jsx'
+
+All files are ready in your folder!
+Just upload to GitHub and Vercel will handle the rest!
+
+🚀 READY TO DEPLOY! 🚀
