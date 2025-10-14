@@ -491,7 +491,7 @@ const App = () => {
                 onClick={() => setCurrentPage('home')}
               >
                 <img
-                  src="/Perpetual Linger Logo 2.jpeg"
+                  src="/PL_logo_transparent.png"
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
                 />
@@ -1570,7 +1570,7 @@ const App = () => {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <img
-                src="/Perpetual Linger Logo 2.jpeg"
+                src="/PL_logo_transparent.png"
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
               />
