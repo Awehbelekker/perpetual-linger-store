@@ -494,7 +494,9 @@ const App = () => {
                   src="/PL_logo_transparent.png"
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
-                  style={{ mixBlendMode: 'lighten' }}
+                  style={{
+                    filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
+                  }}
                 />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
@@ -601,8 +603,10 @@ const App = () => {
             <img
               src="/PL_logo_transparent.png"
               alt="Perpetual Linger Logo"
-              className="h-32 md:h-40 w-auto"
-              style={{ mixBlendMode: 'lighten', filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.5))' }}
+              className="h-48 md:h-64 w-auto"
+              style={{
+                filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%) drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
+              }}
             />
           </div>
           <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
@@ -1207,7 +1211,7 @@ const App = () => {
               <h3 className="font-bold text-amber-400 mb-3">Contact us:</h3>
               <ul className="space-y-2 text-gray-300">
                 <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
-                <li><strong>Email:</strong> <span className="text-amber-400">info@perpetuallinger.co.za</span></li>
+                <li><strong>Email:</strong> <span className="text-amber-400">perpetuallinger@gmail.com</span></li>
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
               </ul>
             </div>
@@ -1335,7 +1339,7 @@ const App = () => {
               <p className="font-bold text-amber-400 mb-3">Perpetual Linger</p>
               <ul className="space-y-2 text-gray-300">
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
-                <li><strong>Email:</strong> <span className="text-amber-400">info@perpetuallinger.co.za</span></li>
+                <li><strong>Email:</strong> <span className="text-amber-400">perpetuallinger@gmail.com</span></li>
                 <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
               </ul>
             </div>
@@ -1389,7 +1393,7 @@ const App = () => {
                 <Mail style={{ color: '#D4AF37' }} className="mt-1" />
                 <div>
                   <h3 className="font-serif font-bold mb-1 text-white">Email</h3>
-                  <p className="font-sans" style={{ color: '#D4AF37' }}>info@perpetuallinger.co.za</p>
+                  <p className="font-sans" style={{ color: '#D4AF37' }}>perpetuallinger@gmail.com</p>
                 </div>
               </div>
 
@@ -1582,7 +1586,9 @@ const App = () => {
                 src="/PL_logo_transparent.png"
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
-                style={{ mixBlendMode: 'lighten' }}
+                style={{
+                  filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
+                }}
               />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
