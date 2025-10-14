@@ -1450,18 +1450,18 @@ const App = () => {
   );
 
   const Cart = () => (
-    <div className={`fixed right-0 top-0 h-full w-full md:w-96 bg-white luxury-shadow-hover transform transition-all duration-400 z-50 ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <div className={`fixed right-0 top-0 h-full w-full md:w-96 bg-gradient-to-b from-black via-neutral-900 to-black luxury-shadow-hover transform transition-all duration-400 z-50 ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex flex-col h-full">
         <div className="flex justify-between items-center p-6 border-b-2" style={{ borderColor: '#D4AF37' }}>
-          <h2 className="text-2xl font-serif font-bold" style={{ color: '#1a1a1a' }}>Your Cart</h2>
-          <button onClick={() => setCartOpen(false)} className="p-2 hover:bg-neutral-100 rounded-lg transition-all duration-300">
+          <h2 className="text-2xl font-serif font-bold text-gradient">Your Cart</h2>
+          <button onClick={() => setCartOpen(false)} className="p-2 hover:bg-neutral-800 rounded-lg transition-all duration-300" style={{ color: '#D4AF37' }}>
             <X />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
           {cart.length === 0 ? (
-            <div className="text-center text-gray-500 mt-12">
+            <div className="text-center mt-12" style={{ color: '#D4AF37' }}>
               <ShoppingCart size={48} className="mx-auto mb-4 opacity-50" />
               <p className="font-sans">Your cart is empty</p>
               <button
@@ -1469,7 +1469,7 @@ const App = () => {
                   setCartOpen(false);
                   setCurrentPage('forHer');
                 }}
-                className="mt-6 luxury-gradient text-black px-6 py-3 rounded-lg font-sans font-semibold hover:scale-105 transition-all duration-300"
+                className="mt-6 luxury-gradient text-black px-6 py-3 rounded-lg font-sans font-semibold hover:scale-105 transition-all duration-300 luxury-shadow-hover"
               >
                 Start Shopping
               </button>
@@ -1477,16 +1477,16 @@ const App = () => {
           ) : (
             <div className="space-y-4">
               {cart.map(item => (
-                <div key={item.id} className="border-2 rounded-xl p-4 hover:border-gold transition-all duration-300" style={{ borderColor: '#e5e5e5' }}>
+                <div key={item.id} className="glass-morphism border-2 rounded-xl p-4 hover:border-gold transition-all duration-300 luxury-shadow" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
-                      <h3 className="font-serif font-bold" style={{ color: '#1a1a1a' }}>{item.name}</h3>
-                      <p className="text-sm text-gray-600 font-sans">{item.size}</p>
-                      <p className="font-bold mt-1 font-sans" style={{ color: '#D4AF37' }}>R{item.price}.00</p>
+                      <h3 className="font-serif font-bold text-white">{item.name}</h3>
+                      <p className="text-sm font-sans" style={{ color: '#D4AF37' }}>{item.size}</p>
+                      <p className="font-bold mt-1 font-sans text-gradient">R{item.price}.00</p>
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                      className="text-red-400 hover:text-red-300 transition-colors duration-300"
                     >
                       <X size={20} />
                     </button>
@@ -1494,16 +1494,16 @@ const App = () => {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-100 transition-all duration-300 font-sans font-bold"
-                      style={{ borderColor: '#D4AF37' }}
+                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-800 transition-all duration-300 font-sans font-bold"
+                      style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
                     >
                       -
                     </button>
-                    <span className="w-12 text-center font-bold font-sans">{item.quantity}</span>
+                    <span className="w-12 text-center font-bold font-sans text-white">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-100 transition-all duration-300 font-sans font-bold"
-                      style={{ borderColor: '#D4AF37' }}
+                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-800 transition-all duration-300 font-sans font-bold"
+                      style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
                     >
                       +
                     </button>
@@ -1515,7 +1515,7 @@ const App = () => {
         </div>
 
         {cart.length > 0 && (
-          <div className="border-t-2 p-6 space-y-4" style={{ borderColor: '#D4AF37' }}>
+          <div className="border-t-2 p-6 space-y-4 bg-black" style={{ borderColor: '#D4AF37' }}>
             <div className="flex justify-between items-center">
               <button
                 onClick={() => setCartOpen(false)}
@@ -1527,13 +1527,13 @@ const App = () => {
             </div>
 
             <div className="flex justify-between items-center text-xl font-bold font-serif">
-              <span style={{ color: '#1a1a1a' }}>Total:</span>
-              <span style={{ color: '#D4AF37' }}>R{getTotalPrice()}.00</span>
+              <span className="text-white">Total:</span>
+              <span className="text-gradient">R{getTotalPrice()}.00</span>
             </div>
 
             <button
               onClick={handleWhatsAppCheckout}
-              className="w-full bg-green-600 text-white py-4 font-sans font-semibold hover:bg-green-700 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 luxury-shadow-hover rounded-lg"
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 font-sans font-semibold hover:from-green-700 hover:to-green-800 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 luxury-shadow-hover rounded-lg"
             >
               <Phone size={20} />
               <span>Order via WhatsApp</span>
@@ -1549,7 +1549,7 @@ const App = () => {
               Pay Online with Peach Payments
             </button>
 
-            <p className="text-xs text-gray-500 text-center font-sans">
+            <p className="text-xs text-center font-sans" style={{ color: '#D4AF37' }}>
               Secure payment processing available
             </p>
           </div>
