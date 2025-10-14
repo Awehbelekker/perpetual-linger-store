@@ -413,7 +413,7 @@ const App = () => {
         `${item.name} - ${item.size} (${item.quantity}x R${item.price})`
       ).join('\n')}\n\nTotal: R${getTotalPrice()}.00`;
 
-      window.open(`https://wa.me/27628989645?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/27611010845?text=${encodeURIComponent(message)}`, '_blank');
       addToast('Opening WhatsApp...', 'success');
     } catch (error) {
       addToast('Failed to open WhatsApp. Please try again.', 'error');
@@ -490,6 +490,11 @@ const App = () => {
                 className="flex items-center space-x-3 cursor-pointer group"
                 onClick={() => setCurrentPage('home')}
               >
+                <img
+                  src="/Perpetual Linger Logo 2.jpeg"
+                  alt="Perpetual Linger Logo"
+                  className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+                />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
                   <div className="text-xs font-sans" style={{ color: '#D4AF37' }}>They'll Never Forget</div>
@@ -594,7 +599,7 @@ const App = () => {
           <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
           <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>They'll Never Forget</p>
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 font-sans font-light leading-relaxed">
-            Luxury inspired fragrances crafted with passion. Leave a lasting impression that echoes long after you're gone.
+            Luxury inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
@@ -1192,7 +1197,7 @@ const App = () => {
             <div className="bg-black/40 rounded-lg p-4 border border-amber-400/30">
               <h3 className="font-bold text-amber-400 mb-3">Contact us:</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27628989645" className="text-amber-400 hover:underline">062 898 9645</a></li>
+                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
                 <li><strong>Email:</strong> <span className="text-amber-400">info@perpetuallinger.co.za</span></li>
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
               </ul>
@@ -1322,7 +1327,7 @@ const App = () => {
               <ul className="space-y-2 text-gray-300">
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
                 <li><strong>Email:</strong> <span className="text-amber-400">info@perpetuallinger.co.za</span></li>
-                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27628989645" className="text-amber-400 hover:underline">062 898 9645</a></li>
+                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
               </ul>
             </div>
           </section>
@@ -1358,9 +1363,9 @@ const App = () => {
                 <Phone style={{ color: '#D4AF37' }} className="mt-1" />
                 <div>
                   <h3 className="font-serif font-bold mb-1 text-white">WhatsApp</h3>
-                  <p className="font-sans" style={{ color: '#D4AF37' }}>062 898 9645</p>
+                  <p className="font-sans" style={{ color: '#D4AF37' }}>061 101 0845</p>
                   <a
-                    href="https://wa.me/27628989645"
+                    href="https://wa.me/27611010845"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-sans hover:underline"
@@ -1564,13 +1569,18 @@ const App = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-4">
+              <img
+                src="/Perpetual Linger Logo 2.jpeg"
+                alt="Perpetual Linger Logo"
+                className="h-10 w-auto"
+              />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
                 <div className="text-xs text-amber-400">They'll Never Forget</div>
               </div>
             </div>
             <p className="text-gray-400 text-sm">
-              Premium inspired fragrances that leave a lasting impression.
+              Luxury inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
             </p>
           </div>
 
