@@ -494,6 +494,7 @@ const App = () => {
                   src="/PL_logo_transparent.png"
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+                  style={{ mixBlendMode: 'lighten' }}
                 />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
@@ -596,6 +597,14 @@ const App = () => {
         </div>
 
         <div className="relative text-center text-white px-4 z-10 animate-fadeIn">
+          <div className="flex justify-center mb-8">
+            <img
+              src="/PL_logo_transparent.png"
+              alt="Perpetual Linger Logo"
+              className="h-32 md:h-40 w-auto"
+              style={{ mixBlendMode: 'lighten', filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.5))' }}
+            />
+          </div>
           <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
           <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>They'll Never Forget</p>
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 font-sans font-light leading-relaxed">
@@ -1242,7 +1251,7 @@ const App = () => {
 
         <div className="glass-morphism rounded-xl luxury-shadow p-8 mb-8 space-y-6 text-white font-sans">
           <section>
-            <h2 className="text-2xl font-serif font-bold mb-4" style={{ color: '#D4AF37' }}>SITE TERMS/NOTICE</h2>
+            <h2 className="text-2xl font-serif font-bold mb-4" style={{ color: '#D4AF37' }}>SITE TERMS | NOTICE</h2>
             <p className="text-gray-300">
               All promotional offers mentioned on the <strong>ONLINE SHOP</strong> are subject to availability and may be
               withdrawn or amended at any time without prior notice.
@@ -1573,6 +1582,7 @@ const App = () => {
                 src="/PL_logo_transparent.png"
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
+                style={{ mixBlendMode: 'lighten' }}
               />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
