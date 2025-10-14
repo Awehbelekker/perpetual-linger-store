@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X, Phone, Mail, MapPin, Instagram, Facebook, ChevronRight, ArrowLeft, Home } from 'lucide-react';
+import { ShoppingCart, Menu, X, Phone, Mail, MapPin, Instagram, ChevronRight, ArrowLeft, Home } from 'lucide-react';
 import { ToastContainer } from './components/Toast';
 import { ProductCardSkeleton } from './components/SkeletonLoader';
 
@@ -413,7 +413,7 @@ const App = () => {
         `${item.name} - ${item.size} (${item.quantity}x R${item.price})`
       ).join('\n')}\n\nTotal: R${getTotalPrice()}.00`;
 
-      window.open(`https://wa.me/27611010845?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/27610100845?text=${encodeURIComponent(message)}`, '_blank');
       addToast('Opening WhatsApp...', 'success');
     } catch (error) {
       addToast('Failed to open WhatsApp. Please try again.', 'error');
@@ -1210,7 +1210,7 @@ const App = () => {
             <div className="bg-black/40 rounded-lg p-4 border border-amber-400/30">
               <h3 className="font-bold text-amber-400 mb-3">Contact us:</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
+                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27610100845" className="text-amber-400 hover:underline">061 010 0845</a></li>
                 <li><strong>Email:</strong> <span className="text-amber-400">perpetuallinger@gmail.com</span></li>
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
               </ul>
@@ -1340,7 +1340,7 @@ const App = () => {
               <ul className="space-y-2 text-gray-300">
                 <li><strong>Website:</strong> <span className="text-amber-400">www.perpetuallinger.co.za</span></li>
                 <li><strong>Email:</strong> <span className="text-amber-400">perpetuallinger@gmail.com</span></li>
-                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27611010845" className="text-amber-400 hover:underline">061 101 0845</a></li>
+                <li><strong>WhatsApp:</strong> <a href="https://wa.me/27610100845" className="text-amber-400 hover:underline">061 010 0845</a></li>
               </ul>
             </div>
           </section>
@@ -1376,9 +1376,9 @@ const App = () => {
                 <Phone style={{ color: '#D4AF37' }} className="mt-1" />
                 <div>
                   <h3 className="font-serif font-bold mb-1 text-white">WhatsApp</h3>
-                  <p className="font-sans" style={{ color: '#D4AF37' }}>061 101 0845</p>
+                  <p className="font-sans" style={{ color: '#D4AF37' }}>061 010 0845</p>
                   <a
-                    href="https://wa.me/27611010845"
+                    href="https://wa.me/27610100845"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-sans hover:underline"
@@ -1410,7 +1410,6 @@ const App = () => {
               <h3 className="font-serif font-bold mb-4 text-white">Follow Us</h3>
               <div className="flex space-x-4">
                 <a href="#" style={{ color: '#D4AF37' }} className="hover:opacity-80 transition-opacity"><Instagram size={32} /></a>
-                <a href="#" style={{ color: '#D4AF37' }} className="hover:opacity-80 transition-opacity"><Facebook size={32} /></a>
               </div>
             </div>
           </div>
@@ -1620,10 +1619,9 @@ const App = () => {
 
           <div>
             <h3 className="font-bold mb-4">Connect</h3>
-            <p className="text-gray-400 mb-2">WhatsApp: 062 898 9645</p>
+            <p className="text-gray-400 mb-2">WhatsApp: 061 010 0845</p>
             <div className="flex space-x-4 mt-4">
               <a href="#" className="text-amber-400 hover:text-amber-300"><Instagram /></a>
-              <a href="#" className="text-amber-400 hover:text-amber-300"><Facebook /></a>
             </div>
           </div>
         </div>
