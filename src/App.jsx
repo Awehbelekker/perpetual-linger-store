@@ -494,6 +494,7 @@ const App = () => {
                   src="/FinalLogo.png"
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+                  style={{ mixBlendMode: 'screen' }}
                 />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
@@ -602,6 +603,7 @@ const App = () => {
               alt="Perpetual Linger Logo"
               className="h-48 md:h-64 w-auto"
               style={{
+                mixBlendMode: 'screen',
                 filter: 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
               }}
             />
@@ -609,7 +611,7 @@ const App = () => {
           <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
           <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>They'll Never Forget</p>
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 font-sans font-light leading-relaxed">
-            Luxury inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
+            Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
@@ -1582,6 +1584,7 @@ const App = () => {
                 src="/FinalLogo.png"
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
+                style={{ mixBlendMode: 'screen' }}
               />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
@@ -1589,7 +1592,7 @@ const App = () => {
               </div>
             </div>
             <p className="text-gray-400 text-sm">
-              Luxury inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
+              Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
             </p>
           </div>
 
@@ -1622,7 +1625,7 @@ const App = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
           <p>© 2024 Perpetual Linger. All rights reserved.</p>
-          <p className="mt-2">Premium inspired fragrances • Crafted with passion in South Africa</p>
+          <p className="mt-2">Premium-inspired fragrances • Crafted with passion in South Africa</p>
         </div>
       </div>
     </footer>
