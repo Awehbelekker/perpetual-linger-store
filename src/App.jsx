@@ -494,9 +494,6 @@ const App = () => {
                   src="/FinalLogo.png"
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
-                  style={{
-                    filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
-                  }}
                 />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
@@ -605,7 +602,7 @@ const App = () => {
               alt="Perpetual Linger Logo"
               className="h-48 md:h-64 w-auto"
               style={{
-                filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%) drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
+                filter: 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
               }}
             />
           </div>
@@ -1585,9 +1582,6 @@ const App = () => {
                 src="/FinalLogo.png"
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
-                style={{
-                  filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
-                }}
               />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
