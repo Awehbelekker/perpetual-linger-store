@@ -490,14 +490,6 @@ const App = () => {
                 className="flex items-center space-x-3 cursor-pointer group"
                 onClick={() => setCurrentPage('home')}
               >
-                <img
-                  src="/Untitled design (1).svg"
-                  alt="Perpetual Linger Logo"
-                  className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
-                  style={{
-                    filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
-                  }}
-                />
                 <div>
                   <div className="font-serif text-2xl text-gradient font-bold tracking-wide group-hover:scale-105 transition-transform duration-300">Perpetual Linger</div>
                   <div className="text-xs font-sans" style={{ color: '#D4AF37' }}>They'll Never Forget</div>
@@ -599,23 +591,6 @@ const App = () => {
         </div>
 
         <div className="relative text-center text-white px-4 z-10 animate-fadeIn">
-          <div className="flex justify-center mb-8">
-            <div style={{
-              position: 'relative',
-              width: 'fit-content',
-              height: 'fit-content'
-            }}>
-              <img
-                src="/Untitled design (1).svg"
-                alt="Perpetual Linger Logo"
-                className="h-48 md:h-64 w-auto"
-                style={{
-                  display: 'block',
-                  filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%) drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
-                }}
-              />
-            </div>
-          </div>
           <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
           <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>They'll Never Forget</p>
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 font-sans font-light leading-relaxed">
@@ -1588,14 +1563,6 @@ const App = () => {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-4">
-              <img
-                src="/Untitled design (1).svg"
-                alt="Perpetual Linger Logo"
-                className="h-10 w-auto"
-                style={{
-                  filter: 'brightness(0) saturate(100%) invert(73%) sepia(47%) saturate(434%) hue-rotate(359deg) brightness(92%) contrast(87%)'
-                }}
-              />
               <div>
                 <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
                 <div className="text-xs text-amber-400">They'll Never Forget</div>
