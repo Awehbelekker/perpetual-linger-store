@@ -927,13 +927,15 @@ const App = () => {
     };
 
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-6xl mx-auto px-4">
+      <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-12 relative overflow-hidden">
+        <div className="absolute inset-0 texture-overlay opacity-20"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-gradient">Admin Panel</h1>
+            <h1 className="text-4xl font-bold text-gradient font-serif">Admin Panel</h1>
             <button
               onClick={() => { setIsAdmin(false); setCurrentPage('home'); }}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+              className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+              style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
             >
               Logout
             </button>
@@ -941,61 +943,66 @@ const App = () => {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Add/Edit Product Form */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-6">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+            <div className="glass-morphism rounded-xl luxury-shadow p-6">
+              <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block font-medium mb-2">Category</label>
+                  <label className="block font-medium mb-2 text-white font-sans">Category</label>
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-amber-500 focus:outline-none"
+                    className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white"
+                    style={{ borderColor: '#D4AF37' }}
                   >
-                    <option value="forHer">For Her</option>
-                    <option value="forHim">For Him</option>
+                    <option value="forHer" className="bg-black">For Her</option>
+                    <option value="forHim" className="bg-black">For Him</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-2">Product Name *</label>
+                  <label className="block font-medium mb-2 text-white font-sans">Product Name *</label>
                   <input
                     type="text"
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-amber-500 focus:outline-none"
+                    className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                    style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Chanel Chance"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-2">Category Type *</label>
+                  <label className="block font-medium mb-2 text-white font-sans">Category Type *</label>
                   <input
                     type="text"
                     value={newProduct.category}
                     onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-amber-500 focus:outline-none"
+                    className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                    style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Classic & Timeless"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-2">Notes</label>
+                  <label className="block font-medium mb-2 text-white font-sans">Notes</label>
                   <input
                     type="text"
                     value={newProduct.notes}
                     onChange={(e) => setNewProduct({...newProduct, notes: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-amber-500 focus:outline-none"
+                    className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                    style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Pink Pepper, Jasmine, Amber Patchouli, Vanilla"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-2">Description *</label>
+                  <label className="block font-medium mb-2 text-white font-sans">Description *</label>
                   <textarea
                     value={newProduct.description}
                     onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded focus:border-amber-500 focus:outline-none h-24"
+                    className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
+                    style={{ borderColor: '#D4AF37' }}
                     placeholder="Seductive description that captures the essence..."
                   />
                 </div>
@@ -1005,7 +1012,7 @@ const App = () => {
                     <>
                       <button
                         onClick={handleUpdateProduct}
-                        className="flex-1 luxury-gradient text-white py-3 font-semibold hover:scale-105 transition-all duration-300"
+                        className="flex-1 luxury-gradient text-black py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                       >
                         Update Product
                       </button>
@@ -1014,7 +1021,8 @@ const App = () => {
                           setEditingProduct(null);
                           setNewProduct({ name: '', category: '', notes: '', description: '' });
                         }}
-                        className="flex-1 bg-gray-500 text-white py-3 font-semibold hover:bg-gray-600 transition"
+                        className="flex-1 glass-morphism text-white py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
+                        style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
                       >
                         Cancel
                       </button>
@@ -1022,7 +1030,7 @@ const App = () => {
                   ) : (
                     <button
                       onClick={handleAddProduct}
-                      className="w-full luxury-gradient text-white py-3 font-semibold hover:scale-105 transition-all duration-300"
+                      className="w-full luxury-gradient text-black py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                     >
                       Add Product
                     </button>
@@ -1032,32 +1040,34 @@ const App = () => {
             </div>
 
             {/* Product List */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-6">Manage Products</h2>
+            <div className="glass-morphism rounded-xl luxury-shadow p-6">
+              <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Manage Products</h2>
 
               <div className="mb-4">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="p-2 border border-gray-300 rounded focus:border-amber-500 focus:outline-none"
+                  className="p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white"
+                  style={{ borderColor: '#D4AF37' }}
                 >
-                  <option value="forHer">For Her ({productList.forHer.length} products)</option>
-                  <option value="forHim">For Him ({productList.forHim.length} products)</option>
+                  <option value="forHer" className="bg-black">For Her ({productList.forHer.length} products)</option>
+                  <option value="forHim" className="bg-black">For Him ({productList.forHim.length} products)</option>
                 </select>
               </div>
 
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {productList[selectedCategory].map(product => (
-                  <div key={product.id} className="border rounded p-3 flex justify-between items-start">
+                  <div key={product.id} className="border-2 rounded-lg p-4 flex justify-between items-start bg-black/20" style={{ borderColor: '#D4AF37' }}>
                     <div className="flex-1">
-                      <h3 className="font-bold">{product.name}</h3>
-                      <p className="text-sm text-amber-600">{product.category}</p>
-                      <p className="text-xs text-gray-600 mt-1">{product.description.substring(0, 100)}...</p>
+                      <h3 className="font-bold text-white font-sans">{product.name}</h3>
+                      <p className="text-sm font-sans" style={{ color: '#D4AF37' }}>{product.category}</p>
+                      <p className="text-xs text-gray-400 mt-1 font-sans">{product.description.substring(0, 100)}...</p>
                     </div>
                     <div className="flex space-x-2 ml-4">
                       <button
                         onClick={() => startEditing(product)}
-                        className="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition"
+                        className="glass-morphism text-white px-4 py-2 text-sm rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                        style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
                       >
                         Edit
                       </button>
@@ -1067,7 +1077,8 @@ const App = () => {
                             deleteProduct(selectedCategory, product.id);
                           }
                         }}
-                        className="bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition"
+                        className="glass-morphism text-white px-4 py-2 text-sm rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                        style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
                       >
                         Delete
                       </button>
