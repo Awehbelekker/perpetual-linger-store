@@ -600,7 +600,7 @@ const App = () => {
             <img
               src="/Final.png"
               alt="Perpetual Linger Logo"
-              className="h-48 md:h-64 w-auto"
+              className="h-64 md:h-96 w-auto"
               style={{
                 filter: 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.6))'
               }}
