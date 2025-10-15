@@ -654,8 +654,12 @@ const App = () => {
                 onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
                 className="glass-morphism rounded-xl p-4 cursor-pointer hover:scale-105 transition-all duration-400 card-glow luxury-shadow hover:luxury-shadow-hover"
               >
-                <div className="h-24 flex items-center justify-center mb-3 rounded-lg" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 228, 193, 0.3) 100%)' }}>
-                  <div className="text-4xl">🧴</div>
+                <div className="h-24 flex items-center justify-center mb-3 rounded-lg overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 228, 193, 0.3) 100%)' }}>
+                  {product.images && product.images.length > 0 ? (
+                    <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-4xl">🧴</div>
+                  )}
                 </div>
                 <h3 className="font-serif font-bold text-sm mb-1 text-white text-center">{product.name}</h3>
                 <p className="text-xs text-center font-sans" style={{ color: '#D4AF37' }}>{product.category}</p>
@@ -713,7 +717,11 @@ const App = () => {
             >
               <div className="h-48 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 228, 193, 0.25) 100%)' }}>
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 228, 193, 0.4) 100%)' }}></div>
-                <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
+                {product.images && product.images.length > 0 ? (
+                  <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-400 relative z-10" />
+                ) : (
+                  <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
+                )}
               </div>
               <div className="p-5 relative">
                 <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
@@ -736,6 +744,9 @@ const App = () => {
   const ProductPage = () => {
     if (!selectedProduct) return null;
 
+    const [currentImageIndex, setCurrentImageIndex] = useState(selectedProduct.mainImageIndex || 0);
+    const hasImages = selectedProduct.images && selectedProduct.images.length > 0;
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-12 relative overflow-hidden">
         <div className="absolute inset-0 texture-overlay opacity-20"></div>
@@ -744,8 +755,41 @@ const App = () => {
 
           <div className="glass-morphism rounded-xl luxury-shadow overflow-hidden">
             <div className="grid md:grid-cols-2 gap-8 p-8">
-              <div className="rounded-xl h-96 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 228, 193, 0.3) 100%)' }}>
-                <div className="text-9xl">🧴</div>
+              {/* Image Gallery */}
+              <div>
+                <div className="rounded-xl h-96 flex items-center justify-center relative overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 228, 193, 0.3) 100%)' }}>
+                  {hasImages ? (
+                    <img src={selectedProduct.images[currentImageIndex]} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-9xl">🧴</div>
+                  )}
+                </div>
+
+                {/* Image Thumbnails */}
+                {hasImages && selectedProduct.images.length > 1 && (
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {selectedProduct.images.map((img, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                          index === currentImageIndex ? 'border-gold scale-105' : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                        style={index === currentImageIndex ? { borderColor: '#D4AF37' } : {}}
+                      >
+                        <img src={img} alt={`${selectedProduct.name} ${index + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reference Image */}
+                {selectedProduct.referenceImage && selectedProduct.showReference && (
+                  <div className="mt-4 p-4 glass-morphism rounded-lg border-2" style={{ borderColor: '#D4AF37' }}>
+                    <h4 className="text-sm font-semibold mb-2 text-white font-sans">Original Designer Reference:</h4>
+                    <img src={selectedProduct.referenceImage} alt="Reference" className="w-full h-48 object-contain rounded-lg" />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -892,7 +936,11 @@ const App = () => {
       name: '',
       category: '',
       notes: '',
-      description: ''
+      description: '',
+      images: [],
+      mainImageIndex: 0,
+      referenceImage: '',
+      showReference: true
     });
     const [selectedCategory, setSelectedCategory] = useState('forHer');
     const [editingProduct, setEditingProduct] = useState(null);
@@ -900,7 +948,7 @@ const App = () => {
     const handleAddProduct = () => {
       if (newProduct.name && newProduct.category && newProduct.description) {
         addNewProduct(selectedCategory, newProduct);
-        setNewProduct({ name: '', category: '', notes: '', description: '' });
+        setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
         addToast('Product added successfully!', 'success');
       } else {
         addToast('Please fill in all required fields', 'error');
@@ -911,7 +959,7 @@ const App = () => {
       if (editingProduct) {
         updateProduct(selectedCategory, editingProduct.id, newProduct);
         setEditingProduct(null);
-        setNewProduct({ name: '', category: '', notes: '', description: '' });
+        setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
         addToast('Product updated successfully!', 'success');
       }
     };
@@ -922,8 +970,36 @@ const App = () => {
         name: product.name,
         category: product.category,
         notes: product.notes,
-        description: product.description
+        description: product.description,
+        images: product.images || [],
+        mainImageIndex: product.mainImageIndex || 0,
+        referenceImage: product.referenceImage || '',
+        showReference: product.showReference !== undefined ? product.showReference : true
       });
+    };
+
+    const handleImageAdd = (imageUrl) => {
+      if (imageUrl.trim()) {
+        setNewProduct(prev => ({
+          ...prev,
+          images: [...prev.images, imageUrl.trim()]
+        }));
+      }
+    };
+
+    const handleImageRemove = (index) => {
+      setNewProduct(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index),
+        mainImageIndex: prev.mainImageIndex >= prev.images.length - 1 ? 0 : prev.mainImageIndex
+      }));
+    };
+
+    const handleSetMainImage = (index) => {
+      setNewProduct(prev => ({
+        ...prev,
+        mainImageIndex: index
+      }));
     };
 
     return (
@@ -1007,6 +1083,103 @@ const App = () => {
                   />
                 </div>
 
+                {/* Product Images */}
+                <div className="border-2 rounded-lg p-4 bg-black/20" style={{ borderColor: '#D4AF37' }}>
+                  <label className="block font-medium mb-3 text-white font-sans">Product Images</label>
+
+                  <div className="space-y-3">
+                    {/* Add Image Input */}
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        placeholder="Enter image URL"
+                        className="flex-1 p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
+                        style={{ borderColor: '#D4AF37' }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleImageAdd(e.target.value);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={(e) => {
+                          const input = e.target.previousElementSibling;
+                          handleImageAdd(input.value);
+                          input.value = '';
+                        }}
+                        className="luxury-gradient text-black px-4 py-2 rounded-lg font-semibold text-sm hover:scale-105 transition-all duration-300"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {/* Image List */}
+                    {newProduct.images.length > 0 && (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {newProduct.images.map((img, index) => (
+                          <div key={index} className="flex items-center space-x-2 bg-black/40 p-2 rounded-lg">
+                            <img src={img} alt={`Product ${index + 1}`} className="w-12 h-12 object-cover rounded" />
+                            <span className="flex-1 text-xs text-gray-300 truncate font-sans">{img}</span>
+                            <button
+                              onClick={() => handleSetMainImage(index)}
+                              className={`px-3 py-1 text-xs rounded font-semibold transition-all duration-300 ${
+                                index === newProduct.mainImageIndex
+                                  ? 'luxury-gradient text-black'
+                                  : 'glass-morphism text-white hover:scale-105'
+                              }`}
+                              style={index !== newProduct.mainImageIndex ? { borderColor: '#D4AF37', borderWidth: '1px' } : {}}
+                            >
+                              {index === newProduct.mainImageIndex ? 'Main' : 'Set Main'}
+                            </button>
+                            <button
+                              onClick={() => handleImageRemove(index)}
+                              className="glass-morphism text-white px-3 py-1 text-xs rounded hover:scale-105 transition-all duration-300"
+                              style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reference Image */}
+                <div className="border-2 rounded-lg p-4 bg-black/20" style={{ borderColor: '#D4AF37' }}>
+                  <label className="block font-medium mb-3 text-white font-sans">Reference Image (Original Designer)</label>
+
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={newProduct.referenceImage}
+                      onChange={(e) => setNewProduct({...newProduct, referenceImage: e.target.value})}
+                      className="w-full p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
+                      style={{ borderColor: '#D4AF37' }}
+                      placeholder="Enter reference image URL"
+                    />
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="showReference"
+                        checked={newProduct.showReference}
+                        onChange={(e) => setNewProduct({...newProduct, showReference: e.target.checked})}
+                        className="w-4 h-4 rounded"
+                        style={{ accentColor: '#D4AF37' }}
+                      />
+                      <label htmlFor="showReference" className="text-sm text-white font-sans">Show reference image on product page</label>
+                    </div>
+
+                    {newProduct.referenceImage && (
+                      <div className="mt-2">
+                        <img src={newProduct.referenceImage} alt="Reference" className="w-24 h-24 object-cover rounded-lg border-2" style={{ borderColor: '#D4AF37' }} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex space-x-4">
                   {editingProduct ? (
                     <>
@@ -1019,7 +1192,7 @@ const App = () => {
                       <button
                         onClick={() => {
                           setEditingProduct(null);
-                          setNewProduct({ name: '', category: '', notes: '', description: '' });
+                          setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
                         }}
                         className="flex-1 glass-morphism text-white py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                         style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
