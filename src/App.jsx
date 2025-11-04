@@ -169,6 +169,67 @@ const App = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [toasts, setToasts] = useState([]);
 
+  // CMS Content State - Load from localStorage or use defaults
+  const defaultContent = {
+    hero: {
+      heading: 'Perpetual Linger',
+      tagline: "They'll Never Forget",
+      description: "Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone."
+    },
+    sections: {
+      mostPopular: 'Most Popular',
+      forHer: 'For Her',
+      forHim: 'For Him',
+      selectSize: 'Select Size:',
+      productDisclaimer: 'These are premium quality inspired fragrances, carefully crafted to capture the essence of luxury designer scents.'
+    },
+    about: {
+      heading: 'About Perpetual Linger',
+      intro: 'Welcome to Perpetual Linger, where luxury meets affordability in the world of fragrances.',
+      story: 'Founded with a passion for exquisite scents, we specialize in creating premium-inspired fragrances that capture the essence of the world\'s most coveted designer perfumes. Our mission is to make luxury accessible to everyone, without compromising on quality.',
+      mission: 'We believe that everyone deserves to smell amazing and feel confident. That\'s why we\'ve dedicated ourselves to crafting fragrances that rival their designer counterparts at a fraction of the cost.',
+      quality: 'Each fragrance in our collection is carefully formulated using high-quality ingredients and tested to ensure longevity and authenticity. We take pride in our attention to detail and our commitment to customer satisfaction.'
+    },
+    footer: {
+      description: "Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.",
+      copyright: 'Premium-inspired fragrances. Crafted with passion in South Africa.'
+    },
+    contact: {
+      heading: 'Get in Touch',
+      description: 'Have questions about our fragrances? Want to place a custom order? We\'d love to hear from you!',
+      whatsappText: 'Chat with us on WhatsApp for instant assistance',
+      emailText: 'Send us an email and we\'ll respond within 24 hours',
+      locationText: 'Based in South Africa, shipping nationwide'
+    }
+  };
+
+  const [siteContent, setSiteContent] = useState(() => {
+    const saved = localStorage.getItem('perpetualLingerContent');
+    return saved ? JSON.parse(saved) : defaultContent;
+  });
+
+  // Save content to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerContent', JSON.stringify(siteContent));
+  }, [siteContent]);
+
+  const updateSiteContent = (section, field, value) => {
+    setSiteContent(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const resetContentToDefaults = () => {
+    if (confirm('Are you sure you want to reset all content to defaults? This cannot be undone.')) {
+      setSiteContent(defaultContent);
+      addToast('Content reset to defaults!', 'success');
+    }
+  };
+
   // Toast helper functions
   const addToast = (message, type = 'success', duration = 3000) => {
     const id = Date.now();
@@ -606,10 +667,10 @@ const App = () => {
               }}
             />
           </div>
-          <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>Perpetual Linger</h1>
-          <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>They'll Never Forget</p>
+          <h1 className="font-serif text-6xl md:text-8xl mb-6 font-bold tracking-wide" style={{ color: '#D4AF37' }}>{siteContent.hero.heading}</h1>
+          <p className="text-2xl md:text-3xl mb-8 italic font-serif" style={{ color: '#D4AF37' }}>{siteContent.hero.tagline}</p>
           <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-90 font-sans font-light leading-relaxed">
-            Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
+            {siteContent.hero.description}
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
@@ -644,7 +705,7 @@ const App = () => {
       <div className="py-20 bg-gradient-to-b from-black to-neutral-900 relative overflow-hidden">
         <div className="absolute inset-0 texture-overlay opacity-20"></div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <h2 className="font-serif text-4xl md:text-5xl text-center mb-4 text-gradient font-bold tracking-wide">Most Popular</h2>
+          <h2 className="font-serif text-4xl md:text-5xl text-center mb-4 text-gradient font-bold tracking-wide">{siteContent.sections.mostPopular}</h2>
           <p className="text-center mb-12 font-sans" style={{ color: '#D4AF37' }}>Our customers' favorite fragrances</p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -802,7 +863,7 @@ const App = () => {
                   <p className="font-sans" style={{ color: '#D4AF37' }}>{selectedProduct.notes}</p>
                 </div>
 
-                <h3 className="font-serif font-bold text-xl mb-4 text-white">Select Size:</h3>
+                <h3 className="font-serif font-bold text-xl mb-4 text-white">{siteContent.sections.selectSize}</h3>
                 <div className="space-y-3">
                   {sizes.map(({ size, price }) => (
                     <button
@@ -828,7 +889,7 @@ const App = () => {
 
                 <div className="mt-6 p-4 rounded-lg glass-morphism" style={{ background: 'rgba(212, 175, 55, 0.1)' }}>
                   <p className="text-sm font-sans" style={{ color: '#D4AF37' }}>
-                    <strong>Note:</strong> These are premium quality inspired fragrances, carefully crafted to capture the essence of luxury designer scents.
+                    <strong>Note:</strong> {siteContent.sections.productDisclaimer}
                   </p>
                 </div>
               </div>
@@ -843,23 +904,23 @@ const App = () => {
     <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-16 relative overflow-hidden">
       <div className="absolute inset-0 texture-overlay opacity-20"></div>
       <div className="max-w-4xl mx-auto px-4 relative z-10">
-        <h1 className="font-serif text-4xl md:text-5xl text-center mb-12 text-gradient font-bold tracking-wide">Our Story</h1>
+        <h1 className="font-serif text-4xl md:text-5xl text-center mb-12 text-gradient font-bold tracking-wide">{siteContent.about.heading}</h1>
 
         <div className="glass-morphism rounded-xl luxury-shadow p-8 mb-8">
           <p className="text-lg leading-relaxed mb-6 font-sans text-white">
-            At <strong style={{ color: '#D4AF37' }}>Perpetual Linger</strong>, we believe that a fragrance is more than just a scent—it's a memory waiting to be created. Our tagline, <em style={{ color: '#D4AF37' }}>"They'll Never Forget,"</em> embodies our commitment to crafting fragrances that leave a lasting impression, long after you've left the room.
+            {siteContent.about.intro}
           </p>
 
           <p className="text-lg leading-relaxed mb-6 font-sans text-white">
-            We have been composing the best quality perfumes, curating scents from the broadest palette, inspired by the best in the world. We take great pride in our method, knowledge, and passion for the art of layering notes as we design amplified perfume expressions that resonate with your individuality.
+            {siteContent.about.story}
           </p>
 
           <p className="text-lg leading-relaxed mb-6 font-sans text-white">
-            Every fragrance in our collection is a carefully crafted replica, inspired by iconic luxury scents. We bring you the essence of sophistication and elegance at a fraction of the cost, without compromising on quality or longevity.
+            {siteContent.about.mission}
           </p>
 
           <p className="text-lg leading-relaxed font-sans text-white">
-            Whether you're seeking the perfect signature scent or a gift that speaks volumes, Perpetual Linger offers an unforgettable olfactory journey. Because some moments—and some fragrances—are meant to linger forever.
+            {siteContent.about.quality}
           </p>
         </div>
 
@@ -932,6 +993,7 @@ const App = () => {
   );
 
   const AdminPanel = () => {
+    const [adminTab, setAdminTab] = useState('products'); // 'products' or 'cms'
     const [newProduct, setNewProduct] = useState({
       name: '',
       category: '',
@@ -1017,6 +1079,34 @@ const App = () => {
             </button>
           </div>
 
+          {/* Admin Tabs */}
+          <div className="flex space-x-4 mb-8">
+            <button
+              onClick={() => setAdminTab('products')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'products'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'products' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              Product Management
+            </button>
+            <button
+              onClick={() => setAdminTab('cms')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'cms'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'cms' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              Content Management
+            </button>
+          </div>
+
+          {/* Product Management Tab */}
+          {adminTab === 'products' && (
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Add/Edit Product Form */}
             <div className="glass-morphism rounded-xl luxury-shadow p-6">
@@ -1261,6 +1351,261 @@ const App = () => {
               </div>
             </div>
           </div>
+          )}
+
+          {/* Content Management Tab */}
+          {adminTab === 'cms' && (
+            <div className="space-y-6">
+              {/* Hero Section */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>Hero Section</h2>
+                  <span className="text-sm text-gray-400 font-sans">Appears on homepage</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Main Heading</label>
+                    <input
+                      type="text"
+                      value={siteContent.hero.heading}
+                      onChange={(e) => updateSiteContent('hero', 'heading', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Tagline</label>
+                    <input
+                      type="text"
+                      value={siteContent.hero.tagline}
+                      onChange={(e) => updateSiteContent('hero', 'tagline', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Description</label>
+                    <textarea
+                      value={siteContent.hero.description}
+                      onChange={(e) => updateSiteContent('hero', 'description', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Headings */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>Section Headings</h2>
+                  <span className="text-sm text-gray-400 font-sans">Product page headings</span>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Most Popular Section</label>
+                    <input
+                      type="text"
+                      value={siteContent.sections.mostPopular}
+                      onChange={(e) => updateSiteContent('sections', 'mostPopular', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">For Her Section</label>
+                    <input
+                      type="text"
+                      value={siteContent.sections.forHer}
+                      onChange={(e) => updateSiteContent('sections', 'forHer', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">For Him Section</label>
+                    <input
+                      type="text"
+                      value={siteContent.sections.forHim}
+                      onChange={(e) => updateSiteContent('sections', 'forHim', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Select Size Heading</label>
+                    <input
+                      type="text"
+                      value={siteContent.sections.selectSize}
+                      onChange={(e) => updateSiteContent('sections', 'selectSize', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block font-medium mb-2 text-white font-sans">Product Disclaimer Text</label>
+                    <textarea
+                      value={siteContent.sections.productDisclaimer}
+                      onChange={(e) => updateSiteContent('sections', 'productDisclaimer', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-20"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* About Section */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>About Page</h2>
+                  <span className="text-sm text-gray-400 font-sans">About page content</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Page Heading</label>
+                    <input
+                      type="text"
+                      value={siteContent.about.heading}
+                      onChange={(e) => updateSiteContent('about', 'heading', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Introduction</label>
+                    <textarea
+                      value={siteContent.about.intro}
+                      onChange={(e) => updateSiteContent('about', 'intro', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-20"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Brand Story</label>
+                    <textarea
+                      value={siteContent.about.story}
+                      onChange={(e) => updateSiteContent('about', 'story', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Mission Statement</label>
+                    <textarea
+                      value={siteContent.about.mission}
+                      onChange={(e) => updateSiteContent('about', 'mission', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Quality Statement</label>
+                    <textarea
+                      value={siteContent.about.quality}
+                      onChange={(e) => updateSiteContent('about', 'quality', e.target.value)}
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
+                      style={{ borderColor: '#D4AF37' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer & Contact */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Footer */}
+                <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>Footer</h2>
+                    <span className="text-sm text-gray-400 font-sans">Footer text</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block font-medium mb-2 text-white font-sans">Description</label>
+                      <textarea
+                        value={siteContent.footer.description}
+                        onChange={(e) => updateSiteContent('footer', 'description', e.target.value)}
+                        className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-20"
+                        style={{ borderColor: '#D4AF37' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium mb-2 text-white font-sans">Copyright Text</label>
+                      <input
+                        type="text"
+                        value={siteContent.footer.copyright}
+                        onChange={(e) => updateSiteContent('footer', 'copyright', e.target.value)}
+                        className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                        style={{ borderColor: '#D4AF37' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>Contact Page</h2>
+                    <span className="text-sm text-gray-400 font-sans">Contact text</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block font-medium mb-2 text-white font-sans">Page Heading</label>
+                      <input
+                        type="text"
+                        value={siteContent.contact.heading}
+                        onChange={(e) => updateSiteContent('contact', 'heading', e.target.value)}
+                        className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                        style={{ borderColor: '#D4AF37' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium mb-2 text-white font-sans">Description</label>
+                      <textarea
+                        value={siteContent.contact.description}
+                        onChange={(e) => updateSiteContent('contact', 'description', e.target.value)}
+                        className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-20"
+                        style={{ borderColor: '#D4AF37' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save/Reset Buttons */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={resetContentToDefaults}
+                  className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                  style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                >
+                  Reset to Defaults
+                </button>
+                <button
+                  onClick={() => addToast('Content saved successfully!', 'success')}
+                  className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1546,11 +1891,11 @@ const App = () => {
     <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-16 relative overflow-hidden">
       <div className="absolute inset-0 texture-overlay opacity-20"></div>
       <div className="max-w-4xl mx-auto px-4 relative z-10">
-        <h1 className="font-serif text-4xl md:text-5xl text-center mb-12 text-gradient font-bold tracking-wide">Contact Us</h1>
+        <h1 className="font-serif text-4xl md:text-5xl text-center mb-12 text-gradient font-bold tracking-wide">{siteContent.contact.heading}</h1>
 
         <div className="grid md:grid-cols-2 gap-8">
           <div className="glass-morphism rounded-xl luxury-shadow p-8">
-            <h2 className="text-2xl font-serif font-bold mb-6 text-white">Get In Touch</h2>
+            <h2 className="text-2xl font-serif font-bold mb-6 text-white">{siteContent.contact.heading}</h2>
 
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
@@ -1768,12 +2113,12 @@ const App = () => {
                 className="h-10 w-auto"
               />
               <div>
-                <div className="font-serif text-xl text-gradient font-bold">Perpetual Linger</div>
-                <div className="text-xs text-amber-400">They'll Never Forget</div>
+                <div className="font-serif text-xl text-gradient font-bold">{siteContent.hero.heading}</div>
+                <div className="text-xs text-amber-400">{siteContent.hero.tagline}</div>
               </div>
             </div>
             <p className="text-gray-400 text-sm">
-              Luxury-inspired fragrances crafted with passion. Leaving a lasting impression that echoes long after you're gone.
+              {siteContent.footer.description}
             </p>
           </div>
 
@@ -1805,8 +2150,8 @@ const App = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>© 2024 Perpetual Linger. All rights reserved.</p>
-          <p className="mt-2">Premium-inspired fragrances • Crafted with passion in South Africa</p>
+          <p>© 2024 {siteContent.hero.heading}. All rights reserved.</p>
+          <p className="mt-2">{siteContent.footer.copyright}</p>
         </div>
       </div>
     </footer>
@@ -1825,8 +2170,8 @@ const App = () => {
       <Cart />
 
       {currentPage === 'home' && <HomePage />}
-      {currentPage === 'forHer' && <ProductGrid products={productList.forHer} title="For Her" />}
-      {currentPage === 'forHim' && <ProductGrid products={productList.forHim} title="For Him" />}
+      {currentPage === 'forHer' && <ProductGrid products={productList.forHer} title={siteContent.sections.forHer} />}
+      {currentPage === 'forHim' && <ProductGrid products={productList.forHim} title={siteContent.sections.forHim} />}
       {currentPage === 'product' && <ProductPage />}
       {currentPage === 'about' && <AboutPage />}
       {currentPage === 'contact' && <ContactPage />}
