@@ -203,19 +203,23 @@ const App = () => {
     }
   };
 
-  // Google Drive Configuration
+  // Google Drive OAuth 2.0 Configuration
   const [googleDriveConfig, setGoogleDriveConfig] = useState(() => {
     const saved = localStorage.getItem('googleDriveConfig');
     return saved ? JSON.parse(saved) : {
-      apiKey: '',
+      clientId: '',
+      accessToken: '',
       fileId: '',
-      enabled: false
+      imagesFolderId: '',
+      enabled: false,
+      authenticated: false
     };
   });
 
   const [siteContent, setSiteContent] = useState(defaultContent);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
   const [contentError, setContentError] = useState(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Save Google Drive config to localStorage
   useEffect(() => {
@@ -228,11 +232,16 @@ const App = () => {
       setIsLoadingContent(true);
       setContentError(null);
 
-      if (googleDriveConfig.enabled && googleDriveConfig.apiKey && googleDriveConfig.fileId) {
+      if (googleDriveConfig.enabled && googleDriveConfig.authenticated && googleDriveConfig.accessToken && googleDriveConfig.fileId) {
         try {
-          // Load from Google Drive
+          // Load from Google Drive using OAuth token
           const response = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${googleDriveConfig.fileId}?alt=media&key=${googleDriveConfig.apiKey}`
+            `https://www.googleapis.com/drive/v3/files/${googleDriveConfig.fileId}?alt=media`,
+            {
+              headers: {
+                'Authorization': `Bearer ${googleDriveConfig.accessToken}`
+              }
+            }
           );
 
           if (!response.ok) {
@@ -262,7 +271,7 @@ const App = () => {
     };
 
     loadContent();
-  }, [googleDriveConfig.enabled, googleDriveConfig.apiKey, googleDriveConfig.fileId]);
+  }, [googleDriveConfig.enabled, googleDriveConfig.authenticated, googleDriveConfig.accessToken, googleDriveConfig.fileId]);
 
   // Save content to localStorage whenever it changes (as backup)
   useEffect(() => {
@@ -281,32 +290,277 @@ const App = () => {
     }));
   };
 
+  // OAuth 2.0 Authentication
+  const authenticateGoogleDrive = () => {
+    if (!googleDriveConfig.clientId) {
+      addToast('Please enter your Google OAuth Client ID first', 'error');
+      return;
+    }
+
+    setIsAuthenticating(true);
+
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: googleDriveConfig.clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: async (response) => {
+          if (response.access_token) {
+            // Save access token
+            setGoogleDriveConfig(prev => ({
+              ...prev,
+              accessToken: response.access_token,
+              authenticated: true
+            }));
+
+            // Try to find or create the content file
+            await findOrCreateContentFile(response.access_token);
+
+            addToast('Successfully connected to Google Drive!', 'success');
+            setIsAuthenticating(false);
+          } else {
+            addToast('Authentication failed', 'error');
+            setIsAuthenticating(false);
+          }
+        },
+        error_callback: (error) => {
+          console.error('OAuth error:', error);
+          addToast('Authentication failed: ' + error.message, 'error');
+          setIsAuthenticating(false);
+        }
+      });
+
+      client.requestAccessToken();
+    } catch (error) {
+      console.error('Error initializing OAuth:', error);
+      addToast('Failed to initialize Google authentication', 'error');
+      setIsAuthenticating(false);
+    }
+  };
+
+  // Find or create content file in Google Drive
+  const findOrCreateContentFile = async (accessToken) => {
+    try {
+      // Search for existing file
+      const searchResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='perpetual-linger-content.json'&fields=files(id,name)`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        }
+      );
+
+      const searchData = await searchResponse.json();
+
+      if (searchData.files && searchData.files.length > 0) {
+        // File exists, use it
+        const fileId = searchData.files[0].id;
+        setGoogleDriveConfig(prev => ({ ...prev, fileId }));
+        addToast('Found existing content file in Google Drive', 'success');
+      } else {
+        // Create new file
+        const metadata = {
+          name: 'perpetual-linger-content.json',
+          mimeType: 'application/json'
+        };
+
+        const createResponse = await fetch(
+          'https://www.googleapis.com/drive/v3/files',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(metadata)
+          }
+        );
+
+        const fileData = await createResponse.json();
+
+        // Upload initial content
+        await fetch(
+          `https://www.googleapis.com/upload/drive/v3/files/${fileData.id}?uploadType=media`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(defaultContent, null, 2)
+          }
+        );
+
+        setGoogleDriveConfig(prev => ({ ...prev, fileId: fileData.id }));
+        addToast('Created new content file in Google Drive', 'success');
+      }
+
+      // Create images folder if it doesn't exist
+      await findOrCreateImagesFolder(accessToken);
+    } catch (error) {
+      console.error('Error finding/creating content file:', error);
+      addToast('Error setting up Google Drive files', 'error');
+    }
+  };
+
+  // Find or create images folder
+  const findOrCreateImagesFolder = async (accessToken) => {
+    try {
+      const searchResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=name='perpetual-linger-images' and mimeType='application/vnd.google-apps.folder'&fields=files(id,name)`,
+        {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        }
+      );
+
+      const searchData = await searchResponse.json();
+
+      if (searchData.files && searchData.files.length > 0) {
+        setGoogleDriveConfig(prev => ({ ...prev, imagesFolderId: searchData.files[0].id }));
+      } else {
+        // Create folder
+        const metadata = {
+          name: 'perpetual-linger-images',
+          mimeType: 'application/vnd.google-apps.folder'
+        };
+
+        const createResponse = await fetch(
+          'https://www.googleapis.com/drive/v3/files',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(metadata)
+          }
+        );
+
+        const folderData = await createResponse.json();
+        setGoogleDriveConfig(prev => ({ ...prev, imagesFolderId: folderData.id }));
+      }
+    } catch (error) {
+      console.error('Error creating images folder:', error);
+    }
+  };
+
+  // Auto-save content to Google Drive
   const saveContentToGoogleDrive = async () => {
-    if (!googleDriveConfig.enabled || !googleDriveConfig.apiKey || !googleDriveConfig.fileId) {
-      addToast('Google Drive not configured. Saving locally only.', 'info');
+    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken || !googleDriveConfig.fileId) {
+      addToast('Google Drive not connected. Saving locally only.', 'info');
       return;
     }
 
     try {
-      // Note: This requires OAuth2 for write access
-      // For now, we'll show instructions to manually update the file
-      const contentJson = JSON.stringify(siteContent, null, 2);
+      const response = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${googleDriveConfig.fileId}?uploadType=media`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${googleDriveConfig.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(siteContent, null, 2)
+        }
+      );
 
-      // Create a downloadable file
-      const blob = new Blob([contentJson], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'perpetual-linger-content.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.status}`);
+      }
 
-      addToast('Content downloaded! Upload this file to Google Drive to sync.', 'success', 5000);
+      addToast('Content saved to Google Drive!', 'success');
     } catch (error) {
       console.error('Error saving to Google Drive:', error);
-      addToast('Error preparing content for Google Drive', 'error');
+      addToast('Error saving to Google Drive: ' + error.message, 'error');
+    }
+  };
+
+  // Upload image to Google Drive
+  const uploadImageToGoogleDrive = async (file) => {
+    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+      addToast('Google Drive not connected', 'error');
+      return null;
+    }
+
+    try {
+      // Create file metadata
+      const metadata = {
+        name: `${Date.now()}-${file.name}`,
+        mimeType: file.type,
+        parents: googleDriveConfig.imagesFolderId ? [googleDriveConfig.imagesFolderId] : []
+      };
+
+      // Create multipart upload
+      const boundary = '-------314159265358979323846';
+      const delimiter = "\r\n--" + boundary + "\r\n";
+      const close_delim = "\r\n--" + boundary + "--";
+
+      const reader = new FileReader();
+
+      return new Promise((resolve, reject) => {
+        reader.readAsArrayBuffer(file);
+        reader.onload = async () => {
+          const contentType = file.type || 'application/octet-stream';
+          const base64Data = btoa(
+            new Uint8Array(reader.result).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+
+          const multipartRequestBody =
+            delimiter +
+            'Content-Type: application/json\r\n\r\n' +
+            JSON.stringify(metadata) +
+            delimiter +
+            'Content-Type: ' + contentType + '\r\n' +
+            'Content-Transfer-Encoding: base64\r\n' +
+            '\r\n' +
+            base64Data +
+            close_delim;
+
+          const response = await fetch(
+            'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink',
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${googleDriveConfig.accessToken}`,
+                'Content-Type': `multipart/related; boundary="${boundary}"`
+              },
+              body: multipartRequestBody
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.status}`);
+          }
+
+          const fileData = await response.json();
+
+          // Make file publicly accessible
+          await fetch(
+            `https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${googleDriveConfig.accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                role: 'reader',
+                type: 'anyone'
+              })
+            }
+          );
+
+          // Return public URL
+          const publicUrl = `https://drive.google.com/uc?export=view&id=${fileData.id}`;
+          resolve(publicUrl);
+        };
+
+        reader.onerror = () => {
+          reject(new Error('Failed to read file'));
+        };
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      addToast('Error uploading image: ' + error.message, 'error');
+      return null;
     }
   };
 
@@ -1276,31 +1530,96 @@ const App = () => {
                   <label className="block font-medium mb-3 text-white font-sans">Product Images</label>
 
                   <div className="space-y-3">
-                    {/* Add Image Input */}
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Enter image URL"
-                        className="flex-1 p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
-                        style={{ borderColor: '#D4AF37' }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleImageAdd(e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={(e) => {
-                          const input = e.target.previousElementSibling;
-                          handleImageAdd(input.value);
-                          input.value = '';
-                        }}
-                        className="luxury-gradient text-black px-4 py-2 rounded-lg font-semibold text-sm hover:scale-105 transition-all duration-300"
-                      >
-                        Add
-                      </button>
-                    </div>
+                    {/* Upload Options */}
+                    {googleDriveConfig.authenticated ? (
+                      <div>
+                        {/* File Upload Button */}
+                        <label className="block">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files);
+                              if (files.length === 0) return;
+
+                              addToast(`Uploading ${files.length} image(s)...`, 'info');
+
+                              for (const file of files) {
+                                const url = await uploadImageToGoogleDrive(file);
+                                if (url) {
+                                  handleImageAdd(url);
+                                }
+                              }
+
+                              addToast('Images uploaded successfully!', 'success');
+                              e.target.value = ''; // Reset input
+                            }}
+                          />
+                          <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-black/40 transition-all duration-300"
+                            style={{ borderColor: '#D4AF37' }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '';
+                            }}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              e.currentTarget.style.backgroundColor = '';
+
+                              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                              if (files.length === 0) {
+                                addToast('Please drop image files only', 'error');
+                                return;
+                              }
+
+                              addToast(`Uploading ${files.length} image(s)...`, 'info');
+
+                              for (const file of files) {
+                                const url = await uploadImageToGoogleDrive(file);
+                                if (url) {
+                                  handleImageAdd(url);
+                                }
+                              }
+
+                              addToast('Images uploaded successfully!', 'success');
+                            }}
+                          >
+                            <div className="text-4xl mb-2">📸</div>
+                            <p className="text-white font-semibold mb-1">Click to upload or drag & drop</p>
+                            <p className="text-xs text-gray-400">Upload images to Google Drive automatically</p>
+                          </div>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          placeholder="Enter image URL (or connect Google Drive to upload)"
+                          className="flex-1 p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
+                          style={{ borderColor: '#D4AF37' }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleImageAdd(e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.target.previousElementSibling;
+                            handleImageAdd(input.value);
+                            input.value = '';
+                          }}
+                          className="luxury-gradient text-black px-4 py-2 rounded-lg font-semibold text-sm hover:scale-105 transition-all duration-300"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
 
                     {/* Image List */}
                     {newProduct.images.length > 0 && (
@@ -1339,14 +1658,42 @@ const App = () => {
                   <label className="block font-medium mb-3 text-white font-sans">Reference Image (Original Designer)</label>
 
                   <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={newProduct.referenceImage}
-                      onChange={(e) => setNewProduct({...newProduct, referenceImage: e.target.value})}
-                      className="w-full p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
-                      style={{ borderColor: '#D4AF37' }}
-                      placeholder="Enter reference image URL"
-                    />
+                    {googleDriveConfig.authenticated ? (
+                      <label className="block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            addToast('Uploading reference image...', 'info');
+                            const url = await uploadImageToGoogleDrive(file);
+                            if (url) {
+                              setNewProduct({...newProduct, referenceImage: url});
+                              addToast('Reference image uploaded!', 'success');
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-black/40 transition-all duration-300"
+                          style={{ borderColor: '#D4AF37' }}>
+                          <div className="text-2xl mb-1">🖼️</div>
+                          <p className="text-white text-sm font-semibold">Click to upload reference image</p>
+                          <p className="text-xs text-gray-400">Original designer perfume bottle</p>
+                        </div>
+                      </label>
+                    ) : (
+                      <input
+                        type="text"
+                        value={newProduct.referenceImage}
+                        onChange={(e) => setNewProduct({...newProduct, referenceImage: e.target.value})}
+                        className="w-full p-2 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 text-sm"
+                        style={{ borderColor: '#D4AF37' }}
+                        placeholder="Enter reference image URL (or connect Google Drive to upload)"
+                      />
+                    )}
 
                     <div className="flex items-center space-x-2">
                       <input
@@ -1695,20 +2042,18 @@ const App = () => {
                 >
                   Reset to Defaults
                 </button>
-                {googleDriveConfig.enabled && (
-                  <button
-                    onClick={saveContentToGoogleDrive}
-                    className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
-                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
-                  >
-                    Download for Google Drive
-                  </button>
-                )}
                 <button
-                  onClick={() => addToast('Content saved successfully!', 'success')}
+                  onClick={async () => {
+                    addToast('Saving content...', 'info');
+                    if (googleDriveConfig.enabled && googleDriveConfig.authenticated) {
+                      await saveContentToGoogleDrive();
+                    } else {
+                      addToast('Content saved locally!', 'success');
+                    }
+                  }}
                   className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
                 >
-                  Save Changes
+                  {googleDriveConfig.authenticated ? '💾 Save to Google Drive' : '💾 Save Changes'}
                 </button>
               </div>
             </div>
@@ -1732,12 +2077,13 @@ const App = () => {
                       <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#D4AF37' }}>Google Cloud Console</a></li>
                       <li>Create a new project or select existing one</li>
                       <li>Enable the <strong>Google Drive API</strong></li>
-                      <li>Go to "Credentials" → "Create Credentials" → "API Key"</li>
-                      <li>Copy the API Key and paste it below</li>
-                      <li>Create a JSON file named <code className="bg-black/60 px-2 py-1 rounded">perpetual-linger-content.json</code> in your Google Drive</li>
-                      <li>Right-click the file → "Share" → "Anyone with the link can view"</li>
-                      <li>Copy the File ID from the share link (the long string after <code className="bg-black/60 px-2 py-1 rounded">/d/</code>)</li>
-                      <li>Paste the File ID below</li>
+                      <li>Go to "Credentials" → "Create Credentials" → <strong>"OAuth 2.0 Client ID"</strong></li>
+                      <li>Application type: <strong>Web application</strong></li>
+                      <li>Add authorized JavaScript origins: <code className="bg-black/60 px-2 py-1 rounded">https://perpetuallinger.co.za</code></li>
+                      <li>Copy the <strong>Client ID</strong> and paste it below</li>
+                      <li>Enable integration and click <strong>"Connect Google Drive"</strong></li>
+                      <li>Grant permissions when prompted</li>
+                      <li>Done! Content and images will auto-sync</li>
                     </ol>
                   </div>
 
@@ -1775,70 +2121,83 @@ const App = () => {
                   </div>
 
                   <div>
-                    <label className="block font-medium mb-2 text-white font-sans">Google Drive API Key</label>
+                    <label className="block font-medium mb-2 text-white font-sans">Google OAuth 2.0 Client ID</label>
                     <input
                       type="text"
-                      value={googleDriveConfig.apiKey}
-                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                      placeholder="AIzaSy..."
+                      value={googleDriveConfig.clientId}
+                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, clientId: e.target.value }))}
+                      placeholder="123456789-abc123.apps.googleusercontent.com"
                       className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
                       style={{ borderColor: '#D4AF37' }}
                       disabled={!googleDriveConfig.enabled}
                     />
-                    <p className="text-xs text-gray-400 mt-1">Your Google Cloud API key with Drive API enabled</p>
+                    <p className="text-xs text-gray-400 mt-1">Your OAuth 2.0 Client ID from Google Cloud Console</p>
                   </div>
 
-                  <div>
-                    <label className="block font-medium mb-2 text-white font-sans">Google Drive File ID</label>
-                    <input
-                      type="text"
-                      value={googleDriveConfig.fileId}
-                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, fileId: e.target.value }))}
-                      placeholder="1a2b3c4d5e6f..."
-                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
-                      style={{ borderColor: '#D4AF37' }}
-                      disabled={!googleDriveConfig.enabled}
-                    />
-                    <p className="text-xs text-gray-400 mt-1">The ID of your perpetual-linger-content.json file (from share link)</p>
-                  </div>
+                  {googleDriveConfig.authenticated && (
+                    <div className="bg-green-900/30 border-2 border-green-500 p-4 rounded-lg">
+                      <p className="font-bold text-green-400">✓ Connected to Google Drive</p>
+                      <p className="text-sm text-green-300 mt-1">Content file: {googleDriveConfig.fileId ? 'Found' : 'Creating...'}</p>
+                      <p className="text-sm text-green-300">Images folder: {googleDriveConfig.imagesFolderId ? 'Ready' : 'Creating...'}</p>
+                    </div>
+                  )}
+
+                  {!googleDriveConfig.authenticated && googleDriveConfig.enabled && googleDriveConfig.clientId && (
+                    <button
+                      onClick={authenticateGoogleDrive}
+                      disabled={isAuthenticating}
+                      className="w-full luxury-gradient text-black px-6 py-4 rounded-lg hover:scale-105 transition-all duration-300 font-semibold text-lg"
+                    >
+                      {isAuthenticating ? 'Connecting...' : '🔗 Connect Google Drive'}
+                    </button>
+                  )}
 
                   <div className="bg-amber-900/20 border-2 border-amber-600 p-4 rounded-lg">
-                    <h4 className="font-bold text-amber-400 mb-2">How it works:</h4>
+                    <h4 className="font-bold text-amber-400 mb-2">✨ How it works:</h4>
                     <ul className="text-sm text-amber-200 space-y-1">
-                      <li>• Website loads content from your Google Drive file on startup</li>
-                      <li>• Changes in admin panel save locally (localStorage backup)</li>
-                      <li>• Click "Download for Google Drive" to get updated JSON file</li>
-                      <li>• Upload the downloaded file to Google Drive to sync changes</li>
-                      <li>• All visitors will see the updated content after refresh</li>
+                      <li>• <strong>Auto-sync:</strong> Content saves to Google Drive automatically</li>
+                      <li>• <strong>Image uploads:</strong> Upload images directly from admin panel</li>
+                      <li>• <strong>Instant updates:</strong> All visitors see changes immediately</li>
+                      <li>• <strong>Centralized:</strong> Manage everything from one place</li>
+                      <li>• <strong>Backup:</strong> localStorage backup for offline access</li>
                     </ul>
                   </div>
                 </div>
               </div>
 
-              {/* Test Connection */}
+              {/* Action Buttons */}
               <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => {
-                    setGoogleDriveConfig(prev => ({ ...prev, enabled: false, apiKey: '', fileId: '' }));
-                    addToast('Google Drive integration disabled', 'info');
-                  }}
-                  className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
-                  style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
-                >
-                  Disable Integration
-                </button>
-                <button
-                  onClick={() => {
-                    if (googleDriveConfig.enabled && googleDriveConfig.apiKey && googleDriveConfig.fileId) {
-                      window.location.reload();
-                    } else {
-                      addToast('Please fill in all fields and enable integration', 'error');
-                    }
-                  }}
-                  className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
-                >
-                  Test & Reload Content
-                </button>
+                {googleDriveConfig.authenticated && (
+                  <button
+                    onClick={() => {
+                      setGoogleDriveConfig(prev => ({
+                        ...prev,
+                        enabled: false,
+                        authenticated: false,
+                        accessToken: '',
+                        fileId: '',
+                        imagesFolderId: ''
+                      }));
+                      addToast('Disconnected from Google Drive', 'info');
+                    }}
+                    className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    Disconnect
+                  </button>
+                )}
+                {googleDriveConfig.authenticated && (
+                  <button
+                    onClick={async () => {
+                      await saveContentToGoogleDrive();
+                      addToast('Testing connection...', 'info');
+                      setTimeout(() => window.location.reload(), 1500);
+                    }}
+                    className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                  >
+                    Save & Reload
+                  </button>
+                )}
               </div>
             </div>
           )}
