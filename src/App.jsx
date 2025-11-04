@@ -203,15 +203,73 @@ const App = () => {
     }
   };
 
-  const [siteContent, setSiteContent] = useState(() => {
-    const saved = localStorage.getItem('perpetualLingerContent');
-    return saved ? JSON.parse(saved) : defaultContent;
+  // Google Drive Configuration
+  const [googleDriveConfig, setGoogleDriveConfig] = useState(() => {
+    const saved = localStorage.getItem('googleDriveConfig');
+    return saved ? JSON.parse(saved) : {
+      apiKey: '',
+      fileId: '',
+      enabled: false
+    };
   });
 
-  // Save content to localStorage whenever it changes
+  const [siteContent, setSiteContent] = useState(defaultContent);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [contentError, setContentError] = useState(null);
+
+  // Save Google Drive config to localStorage
   useEffect(() => {
-    localStorage.setItem('perpetualLingerContent', JSON.stringify(siteContent));
-  }, [siteContent]);
+    localStorage.setItem('googleDriveConfig', JSON.stringify(googleDriveConfig));
+  }, [googleDriveConfig]);
+
+  // Load content from Google Drive or localStorage
+  useEffect(() => {
+    const loadContent = async () => {
+      setIsLoadingContent(true);
+      setContentError(null);
+
+      if (googleDriveConfig.enabled && googleDriveConfig.apiKey && googleDriveConfig.fileId) {
+        try {
+          // Load from Google Drive
+          const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${googleDriveConfig.fileId}?alt=media&key=${googleDriveConfig.apiKey}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`Google Drive API error: ${response.status}`);
+          }
+
+          const content = await response.json();
+          setSiteContent(content);
+          // Also save to localStorage as backup
+          localStorage.setItem('perpetualLingerContent', JSON.stringify(content));
+          addToast('Content loaded from Google Drive!', 'success');
+        } catch (error) {
+          console.error('Error loading from Google Drive:', error);
+          setContentError(error.message);
+          // Fallback to localStorage
+          const saved = localStorage.getItem('perpetualLingerContent');
+          setSiteContent(saved ? JSON.parse(saved) : defaultContent);
+          addToast('Failed to load from Google Drive, using local backup', 'error');
+        }
+      } else {
+        // Load from localStorage
+        const saved = localStorage.getItem('perpetualLingerContent');
+        setSiteContent(saved ? JSON.parse(saved) : defaultContent);
+      }
+
+      setIsLoadingContent(false);
+    };
+
+    loadContent();
+  }, [googleDriveConfig.enabled, googleDriveConfig.apiKey, googleDriveConfig.fileId]);
+
+  // Save content to localStorage whenever it changes (as backup)
+  useEffect(() => {
+    if (!isLoadingContent) {
+      localStorage.setItem('perpetualLingerContent', JSON.stringify(siteContent));
+    }
+  }, [siteContent, isLoadingContent]);
 
   const updateSiteContent = (section, field, value) => {
     setSiteContent(prev => ({
@@ -221,6 +279,35 @@ const App = () => {
         [field]: value
       }
     }));
+  };
+
+  const saveContentToGoogleDrive = async () => {
+    if (!googleDriveConfig.enabled || !googleDriveConfig.apiKey || !googleDriveConfig.fileId) {
+      addToast('Google Drive not configured. Saving locally only.', 'info');
+      return;
+    }
+
+    try {
+      // Note: This requires OAuth2 for write access
+      // For now, we'll show instructions to manually update the file
+      const contentJson = JSON.stringify(siteContent, null, 2);
+
+      // Create a downloadable file
+      const blob = new Blob([contentJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'perpetual-linger-content.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      addToast('Content downloaded! Upload this file to Google Drive to sync.', 'success', 5000);
+    } catch (error) {
+      console.error('Error saving to Google Drive:', error);
+      addToast('Error preparing content for Google Drive', 'error');
+    }
   };
 
   const resetContentToDefaults = () => {
@@ -1080,7 +1167,7 @@ const App = () => {
           </div>
 
           {/* Admin Tabs */}
-          <div className="flex space-x-4 mb-8">
+          <div className="flex flex-wrap gap-4 mb-8">
             <button
               onClick={() => setAdminTab('products')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
@@ -1102,6 +1189,17 @@ const App = () => {
               style={adminTab !== 'cms' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
             >
               Content Management
+            </button>
+            <button
+              onClick={() => setAdminTab('settings')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'settings'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'settings' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              Google Drive Settings
             </button>
           </div>
 
@@ -1597,11 +1695,149 @@ const App = () => {
                 >
                   Reset to Defaults
                 </button>
+                {googleDriveConfig.enabled && (
+                  <button
+                    onClick={saveContentToGoogleDrive}
+                    className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    Download for Google Drive
+                  </button>
+                )}
                 <button
                   onClick={() => addToast('Content saved successfully!', 'success')}
                   className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
                 >
                   Save Changes
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Google Drive Settings Tab */}
+          {adminTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Setup Instructions */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Google Drive Integration Setup</h2>
+
+                <div className="space-y-4 text-white font-sans">
+                  <p className="text-lg">
+                    Connect your Google Drive to store and sync website content across all devices.
+                  </p>
+
+                  <div className="bg-black/40 p-4 rounded-lg space-y-3">
+                    <h3 className="font-bold text-lg" style={{ color: '#D4AF37' }}>Setup Steps:</h3>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#D4AF37' }}>Google Cloud Console</a></li>
+                      <li>Create a new project or select existing one</li>
+                      <li>Enable the <strong>Google Drive API</strong></li>
+                      <li>Go to "Credentials" → "Create Credentials" → "API Key"</li>
+                      <li>Copy the API Key and paste it below</li>
+                      <li>Create a JSON file named <code className="bg-black/60 px-2 py-1 rounded">perpetual-linger-content.json</code> in your Google Drive</li>
+                      <li>Right-click the file → "Share" → "Anyone with the link can view"</li>
+                      <li>Copy the File ID from the share link (the long string after <code className="bg-black/60 px-2 py-1 rounded">/d/</code>)</li>
+                      <li>Paste the File ID below</li>
+                    </ol>
+                  </div>
+
+                  {contentError && (
+                    <div className="bg-red-900/30 border-2 border-red-500 p-4 rounded-lg">
+                      <p className="font-bold text-red-400">Error loading from Google Drive:</p>
+                      <p className="text-sm text-red-300">{contentError}</p>
+                    </div>
+                  )}
+
+                  {isLoadingContent && googleDriveConfig.enabled && (
+                    <div className="bg-blue-900/30 border-2 border-blue-500 p-4 rounded-lg">
+                      <p className="text-blue-300">Loading content from Google Drive...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Configuration Form */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Configuration</h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="flex items-center space-x-3 mb-4">
+                      <input
+                        type="checkbox"
+                        checked={googleDriveConfig.enabled}
+                        onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                        className="w-5 h-5 rounded"
+                        style={{ accentColor: '#D4AF37' }}
+                      />
+                      <span className="text-white font-sans font-semibold">Enable Google Drive Integration</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Google Drive API Key</label>
+                    <input
+                      type="text"
+                      value={googleDriveConfig.apiKey}
+                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                      placeholder="AIzaSy..."
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                      disabled={!googleDriveConfig.enabled}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Your Google Cloud API key with Drive API enabled</p>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-2 text-white font-sans">Google Drive File ID</label>
+                    <input
+                      type="text"
+                      value={googleDriveConfig.fileId}
+                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, fileId: e.target.value }))}
+                      placeholder="1a2b3c4d5e6f..."
+                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                      style={{ borderColor: '#D4AF37' }}
+                      disabled={!googleDriveConfig.enabled}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">The ID of your perpetual-linger-content.json file (from share link)</p>
+                  </div>
+
+                  <div className="bg-amber-900/20 border-2 border-amber-600 p-4 rounded-lg">
+                    <h4 className="font-bold text-amber-400 mb-2">How it works:</h4>
+                    <ul className="text-sm text-amber-200 space-y-1">
+                      <li>• Website loads content from your Google Drive file on startup</li>
+                      <li>• Changes in admin panel save locally (localStorage backup)</li>
+                      <li>• Click "Download for Google Drive" to get updated JSON file</li>
+                      <li>• Upload the downloaded file to Google Drive to sync changes</li>
+                      <li>• All visitors will see the updated content after refresh</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Test Connection */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => {
+                    setGoogleDriveConfig(prev => ({ ...prev, enabled: false, apiKey: '', fileId: '' }));
+                    addToast('Google Drive integration disabled', 'info');
+                  }}
+                  className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                  style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                >
+                  Disable Integration
+                </button>
+                <button
+                  onClick={() => {
+                    if (googleDriveConfig.enabled && googleDriveConfig.apiKey && googleDriveConfig.fileId) {
+                      window.location.reload();
+                    } else {
+                      addToast('Please fill in all fields and enable integration', 'error');
+                    }
+                  }}
+                  className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                >
+                  Test & Reload Content
                 </button>
               </div>
             </div>
