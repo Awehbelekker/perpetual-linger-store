@@ -657,7 +657,7 @@ const App = () => {
   // It's not a secret - it's meant to identify your application.
   // ============================================================================
 
-  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE.apps.googleusercontent.com';
+  const GOOGLE_CLIENT_ID = '147864566465-rosy-dynamics-477308-t2.apps.googleusercontent.com';
 
   const [googleDriveConfig, setGoogleDriveConfig] = useState(() => {
     const saved = localStorage.getItem('googleDriveConfig');
