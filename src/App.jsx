@@ -626,12 +626,12 @@ const App = () => {
           id: Date.now(),
           type: 'promo-banner',
           visible: true,
-          title: 'Weekend Special - 30% OFF!',
-          subtitle: 'All 100ml bottles',
+          title: '✨ Exclusive Weekend Luxury ✨',
+          subtitle: 'Indulge in 30% OFF Premium Designer Fragrances - This Weekend Only',
           backgroundColor: 'gold',
           textColor: 'black',
-          buttonText: 'Shop Now',
-          buttonLink: '#products',
+          buttonText: 'Shop Weekend Deals',
+          buttonLink: '#shop-now',
           showCountdown: true,
           endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         },
@@ -639,8 +639,8 @@ const App = () => {
           id: Date.now() + 1,
           type: 'featured-products',
           visible: true,
-          title: 'Featured This Weekend',
-          productIds: [],
+          title: 'Weekend Best Sellers',
+          productIds: ['chanel-coco', 'dior-sauvage', 'bleu-chanel', 'dior-poison'],
           columns: 4
         }
       ],
@@ -649,25 +649,33 @@ const App = () => {
           id: Date.now(),
           type: 'promo-banner',
           visible: true,
-          title: 'Holiday Sale - Up to 50% OFF!',
-          subtitle: 'Limited time offer',
-          backgroundColor: 'black',
-          textColor: 'gold',
-          buttonText: 'Shop Sale',
-          buttonLink: '#products',
+          title: '🎄 Holiday Magic - Luxury Scents Up to 50% OFF 🎄',
+          subtitle: 'Make This Season Unforgettable with Designer Fragrances',
+          backgroundColor: 'red',
+          textColor: 'white',
+          buttonText: 'Discover Holiday Deals',
+          buttonLink: '#holiday-collection',
           showCountdown: true,
-          endDate: ''
+          endDate: new Date(new Date().getFullYear(), 11, 31).toISOString().split('T')[0] // Dec 31
         },
         {
           id: Date.now() + 1,
           type: 'special-offer',
           visible: true,
-          title: 'Extra Discount',
-          description: 'Use code at checkout for additional savings',
-          code: 'HOLIDAY25',
+          title: '🎁 Extra Holiday Bonus',
+          description: 'Stack your savings! Use this exclusive code for an additional discount on all orders',
+          code: 'HOLIDAY2024',
           discount: '25% OFF',
           backgroundColor: 'gold',
           textColor: 'black'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Perfect Holiday Gifts',
+          productIds: ['chanel-coco', 'dior-sauvage', 'lancome-belle', 'pr-invictus', 'armani-si', 'bleu-chanel'],
+          columns: 3
         }
       ],
       'new-arrivals': [
@@ -675,36 +683,56 @@ const App = () => {
           id: Date.now(),
           type: 'announcement',
           visible: true,
-          text: '🎉 Just Arrived: 5 New Designer Scents!',
-          backgroundColor: 'black',
-          textColor: 'gold',
-          icon: '🎉'
+          text: '✨ Just Landed: Exclusive New Designer Fragrances - Be The First To Experience Them!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          icon: '✨'
         },
         {
           id: Date.now() + 1,
+          type: 'text',
+          visible: true,
+          content: 'Discover our latest collection of premium designer-inspired fragrances. Each scent carefully crafted to capture the essence of luxury and leave a lasting impression.',
+          fontSize: 'medium',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 2,
           type: 'featured-products',
           visible: true,
-          title: 'New Arrivals',
-          productIds: [],
+          title: 'Fresh Arrivals - Limited Stock',
+          productIds: ['gucci-bamboo', 'armani-si', 'elie-saab', 'versace-eros'],
           columns: 4
         }
       ],
       'seasonal-collection': [
         {
           id: Date.now(),
-          type: 'image',
+          type: 'promo-banner',
           visible: true,
-          imageUrl: '',
-          altText: 'Seasonal Collection',
-          link: '#products',
-          height: 'large'
+          title: '🌸 Spring/Summer Collection 🌸',
+          subtitle: 'Light, Fresh & Captivating Scents for Warmer Days',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Explore Collection',
+          buttonLink: '#seasonal-picks',
+          showCountdown: false,
+          endDate: ''
         },
         {
           id: Date.now() + 1,
+          type: 'text',
+          visible: true,
+          content: 'Embrace the season with our curated selection of fresh, aquatic, and floral fragrances. Perfect for making memories that last all summer long.',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 2,
           type: 'featured-products',
           visible: true,
-          title: 'Perfect for the Season',
-          productIds: [],
+          title: 'Seasonal Favorites',
+          productIds: ['dg-lightblue', 'davidoff-coolwater', 'armani-acqua', 'issey-miyake'],
           columns: 4
         }
       ],
@@ -713,14 +741,234 @@ const App = () => {
           id: Date.now(),
           type: 'promo-banner',
           visible: true,
-          title: '⚡ FLASH SALE - 50% OFF!',
-          subtitle: 'Ends Soon!',
+          title: '⚡ FLASH SALE - 50% OFF EVERYTHING! ⚡',
+          subtitle: 'Hurry! This Deal Disappears in Hours - Don\'t Miss Out!',
+          backgroundColor: 'red',
+          textColor: 'white',
+          buttonText: 'Grab Your Deal Now',
+          buttonLink: '#flash-deals',
+          showCountdown: true,
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 24 hours
+        },
+        {
+          id: Date.now() + 1,
+          type: 'announcement',
+          visible: true,
+          text: '🔥 Limited Stock! First Come, First Served - No Rain Checks!',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          icon: '🔥'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Flash Sale Highlights',
+          productIds: ['chanel-coco', 'dior-sauvage', 'bleu-chanel', 'dior-poison', 'pr-invictus', 'lancome-belle'],
+          columns: 3
+        }
+      ],
+      'bogo-promotion': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: '🎁 Buy One, Get One FREE! 🎁',
+          subtitle: 'Double Your Luxury - Mix & Match Any Fragrances',
           backgroundColor: 'gold',
           textColor: 'black',
-          buttonText: 'Grab It Now',
-          buttonLink: '#products',
+          buttonText: 'Shop BOGO Deal',
+          buttonLink: '#bogo-deals',
+          showCountdown: false,
+          endDate: ''
+        },
+        {
+          id: Date.now() + 1,
+          type: 'special-offer',
+          visible: true,
+          title: 'How It Works',
+          description: 'Add 2 fragrances to cart, pay for 1! Discount applied automatically at checkout.',
+          code: 'BOGO2024',
+          discount: '50% OFF 2nd Item',
+          backgroundColor: 'black',
+          textColor: 'gold'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Perfect Pairs',
+          productIds: ['chanel-coco', 'dior-sauvage', 'lancome-belle', 'bleu-chanel'],
+          columns: 4
+        }
+      ],
+      'free-shipping': [
+        {
+          id: Date.now(),
+          type: 'announcement',
+          visible: true,
+          text: '🚚 FREE SHIPPING on All Orders Over R500 - Limited Time!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          icon: '🚚'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'promo-banner',
+          visible: true,
+          title: 'Nationwide Free Delivery',
+          subtitle: 'Shop R500+ and Get Your Luxury Fragrances Delivered Free Across South Africa',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          buttonText: 'Start Shopping',
+          buttonLink: '#free-delivery',
+          showCountdown: false,
+          endDate: ''
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Popular Choices',
+          productIds: ['chanel-coco', 'dior-poison', 'dior-sauvage', 'pr-invictus', 'armani-si', 'bleu-chanel'],
+          columns: 3
+        }
+      ],
+      'vip-special': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: '👑 VIP Exclusive Offer 👑',
+          subtitle: 'You\'re Invited: 40% OFF + Free Gift with Every Purchase',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          buttonText: 'Claim VIP Offer',
+          buttonLink: '#vip-access',
           showCountdown: true,
-          endDate: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString().split('T')[0]
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 7 days
+        },
+        {
+          id: Date.now() + 1,
+          type: 'special-offer',
+          visible: true,
+          title: '🎁 VIP Perks',
+          description: 'Exclusive access to premium fragrances + complimentary luxury sample with every order',
+          code: 'VIP2024',
+          discount: '40% OFF + Free Gift',
+          backgroundColor: 'gold',
+          textColor: 'black'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'text',
+          visible: true,
+          content: 'As a valued customer, enjoy priority access to our finest collection. This exclusive offer is reserved for our VIP members only.',
+          fontSize: 'medium',
+          alignment: 'center'
+        }
+      ],
+      'clearance-sale': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: '🔥 End of Season Clearance - Up to 60% OFF! 🔥',
+          subtitle: 'Final Chance! Premium Fragrances at Unbeatable Prices',
+          backgroundColor: 'red',
+          textColor: 'white',
+          buttonText: 'Shop Clearance',
+          buttonLink: '#clearance',
+          showCountdown: true,
+          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 14 days
+        },
+        {
+          id: Date.now() + 1,
+          type: 'announcement',
+          visible: true,
+          text: '⚠️ While Stocks Last - Once They\'re Gone, They\'re Gone!',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          icon: '⚠️'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Clearance Highlights',
+          productIds: ['gucci-rush', 'jpg-classic', 'lacoste-pink', 'dkny-delicious', 'bs-fantasy', 'ck-euphoria'],
+          columns: 3
+        }
+      ],
+      'gift-bundle': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: '🎁 Curated Gift Sets - Perfect for Any Occasion 🎁',
+          subtitle: 'Luxury Fragrance Collections Beautifully Packaged & Ready to Gift',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Browse Gift Sets',
+          buttonLink: '#gift-sets',
+          showCountdown: false,
+          endDate: ''
+        },
+        {
+          id: Date.now() + 1,
+          type: 'text',
+          visible: true,
+          content: 'Give the gift of luxury with our expertly curated fragrance bundles. Each set includes complementary scents for him and her, elegantly presented.',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'His & Hers Collections',
+          productIds: ['chanel-coco', 'dior-sauvage', 'lancome-belle', 'bleu-chanel', 'armani-si', 'pr-invictus'],
+          columns: 3
+        }
+      ],
+      'limited-edition': [
+        {
+          id: Date.now(),
+          type: 'announcement',
+          visible: true,
+          text: '✨ NEW ARRIVAL: Limited Edition Exclusive Fragrance - Only 100 Bottles Available!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          icon: '✨'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'promo-banner',
+          visible: true,
+          title: '🌟 Limited Edition Launch 🌟',
+          subtitle: 'Be Among The First - Exclusive Designer Scent Available for a Limited Time',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          buttonText: 'Reserve Yours Now',
+          buttonLink: '#limited-edition',
+          showCountdown: true,
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days
+        },
+        {
+          id: Date.now() + 2,
+          type: 'text',
+          visible: true,
+          content: 'This exclusive fragrance won\'t be restocked. Once sold out, it\'s gone forever. Secure your bottle today and own a piece of luxury history.',
+          fontSize: 'medium',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 3,
+          type: 'featured-products',
+          visible: true,
+          title: 'Limited Edition Collection',
+          productIds: ['elie-saab', 'gucci-bamboo', 'versace-eros', 'tom-ford'],
+          columns: 4
         }
       ]
     };
@@ -2326,6 +2574,66 @@ const App = () => {
                     <div className="text-3xl mb-2">⚡</div>
                     <h3 className="font-bold text-white mb-2 font-sans">Flash Sale</h3>
                     <p className="text-sm text-gray-400 font-sans">Urgent countdown banner</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('bogo-promotion')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎁</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">BOGO Deal</h3>
+                    <p className="text-sm text-gray-400 font-sans">Buy one get one free promotion</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('free-shipping')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🚚</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Free Shipping</h3>
+                    <p className="text-sm text-gray-400 font-sans">Free delivery promotion</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('vip-special')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">👑</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">VIP Special</h3>
+                    <p className="text-sm text-gray-400 font-sans">Exclusive VIP offer</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('clearance-sale')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🔥</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Clearance Sale</h3>
+                    <p className="text-sm text-gray-400 font-sans">End of season clearance</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('gift-bundle')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎁</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Gift Bundle</h3>
+                    <p className="text-sm text-gray-400 font-sans">Curated gift sets</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('limited-edition')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🌟</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Limited Edition</h3>
+                    <p className="text-sm text-gray-400 font-sans">Exclusive launch announcement</p>
                   </button>
 
                   <button
