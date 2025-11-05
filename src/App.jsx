@@ -383,7 +383,7 @@ const ImagePicker = ({ value, onChange, imageLibrary, loadingImages, onUpload, o
 };
 
 // Content Block Renderer Component
-const ContentBlockRenderer = ({ block, allProducts }) => {
+const ContentBlockRenderer = ({ block, allProducts, previewMode = false }) => {
   if (!block.visible) return null;
 
   const getBackgroundColor = (color) => {
@@ -465,16 +465,28 @@ const ContentBlockRenderer = ({ block, allProducts }) => {
             </div>
           )}
           {block.buttonText && (
-            <a
-              href={block.buttonLink}
-              className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 luxury-shadow"
-              style={{
-                background: block.backgroundColor === 'gold' ? '#000000' : getBackgroundColor('gold'),
-                color: block.backgroundColor === 'gold' ? '#D4AF37' : '#000000'
-              }}
-            >
-              {block.buttonText}
-            </a>
+            previewMode ? (
+              <div
+                className="inline-block px-8 py-4 rounded-lg font-bold text-lg luxury-shadow pointer-events-none"
+                style={{
+                  background: block.backgroundColor === 'gold' ? '#000000' : getBackgroundColor('gold'),
+                  color: block.backgroundColor === 'gold' ? '#D4AF37' : '#000000'
+                }}
+              >
+                {block.buttonText}
+              </div>
+            ) : (
+              <a
+                href={block.buttonLink}
+                className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 luxury-shadow"
+                style={{
+                  background: block.backgroundColor === 'gold' ? '#000000' : getBackgroundColor('gold'),
+                  color: block.backgroundColor === 'gold' ? '#D4AF37' : '#000000'
+                }}
+              >
+                {block.buttonText}
+              </a>
+            )
           )}
         </div>
       );
@@ -514,7 +526,7 @@ const ContentBlockRenderer = ({ block, allProducts }) => {
 
     case 'featured-products':
       const selectedProducts = block.productIds
-        .map(id => allProducts.find(p => p.id === id))
+        .map(id => allProducts?.find(p => p.id === id))
         .filter(Boolean)
         .slice(0, block.columns);
 
@@ -527,7 +539,10 @@ const ContentBlockRenderer = ({ block, allProducts }) => {
           </h2>
           <div className={`grid grid-cols-1 md:grid-cols-${block.columns} gap-6`}>
             {selectedProducts.map(product => (
-              <div key={product.id} className="glass-morphism rounded-xl overflow-hidden luxury-shadow hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div
+                key={product.id}
+                className={`glass-morphism rounded-xl overflow-hidden luxury-shadow transition-all duration-300 ${previewMode ? 'pointer-events-none' : 'hover:scale-105 cursor-pointer'}`}
+              >
                 <img src={product.images?.[product.mainImageIndex || 0]} alt={product.name} className="w-full h-64 object-cover" />
                 <div className="p-4">
                   <h3 className="font-serif text-xl font-bold text-white mb-2">{product.name}</h3>
@@ -558,7 +573,7 @@ const ContentBlockRenderer = ({ block, allProducts }) => {
 
       return (
         <div className="mb-8">
-          {block.link ? (
+          {block.link && !previewMode ? (
             <a href={block.link}>{ImageContent}</a>
           ) : (
             ImageContent
@@ -3354,8 +3369,12 @@ const App = () => {
                                   </div>
 
                                   {/* Block Preview */}
-                                  <div className={`${!block.visible ? 'opacity-50' : ''}`}>
-                                    <ContentBlockRenderer block={block} />
+                                  <div className={`${!block.visible ? 'opacity-50' : ''} pointer-events-none`}>
+                                    <ContentBlockRenderer
+                                      block={block}
+                                      allProducts={[...products.forHer, ...products.forHim]}
+                                      previewMode={true}
+                                    />
                                   </div>
 
                                   {/* Drag Indicator */}
