@@ -511,6 +511,9 @@ const App = () => {
   // Content Blocks Management
   const [editingBlock, setEditingBlock] = useState(null);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState(null);
+  const [pageBuilderView, setPageBuilderView] = useState('visual'); // 'visual' or 'list'
+  const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const addContentBlock = (blockType) => {
     const newBlock = {
@@ -617,6 +620,37 @@ const App = () => {
       blocks.splice(toIndex, 0, movedBlock);
       return { ...prev, contentBlocks: blocks };
     });
+  };
+
+  // Enhanced Drag & Drop Handlers for Visual Builder
+  const handleDragStart = (e, index) => {
+    setDraggedBlockIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.currentTarget);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedBlockIndex !== null && draggedBlockIndex !== dropIndex) {
+      moveBlock(draggedBlockIndex, dropIndex);
+    }
+    setDraggedBlockIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBlockIndex(null);
+    setDragOverIndex(null);
   };
 
   const applyTemplate = (templateName) => {
@@ -2520,6 +2554,239 @@ const App = () => {
           {/* Page Builder Tab */}
           {adminTab === 'pageBuilder' && (
             <div className="space-y-6">
+              {/* View Mode Toggle */}
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPageBuilderView('visual')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                      pageBuilderView === 'visual'
+                        ? 'luxury-gradient text-black'
+                        : 'glass-morphism text-white hover:scale-105'
+                    }`}
+                    style={pageBuilderView !== 'visual' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+                  >
+                    🎨 Visual Builder
+                  </button>
+                  <button
+                    onClick={() => setPageBuilderView('list')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                      pageBuilderView === 'list'
+                        ? 'luxury-gradient text-black'
+                        : 'glass-morphism text-white hover:scale-105'
+                    }`}
+                    style={pageBuilderView !== 'list' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+                  >
+                    📋 List View
+                  </button>
+                </div>
+
+                {/* Responsive Preview Toggle (Visual Mode Only) */}
+                {pageBuilderView === 'visual' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPreviewMode('desktop')}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        previewMode === 'desktop' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      }`}
+                      title="Desktop Preview"
+                    >
+                      🖥️ Desktop
+                    </button>
+                    <button
+                      onClick={() => setPreviewMode('tablet')}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        previewMode === 'tablet' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      }`}
+                      title="Tablet Preview"
+                    >
+                      📱 Tablet
+                    </button>
+                    <button
+                      onClick={() => setPreviewMode('mobile')}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        previewMode === 'mobile' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      }`}
+                      title="Mobile Preview"
+                    >
+                      📱 Mobile
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Visual Builder Mode - Split Screen */}
+              {pageBuilderView === 'visual' && (
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Left Panel - Templates & Block Library (1/3 width) */}
+                  <div className="lg:col-span-1 space-y-4 max-h-[800px] overflow-y-auto">
+                    {/* Quick Templates Section */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-4">
+                      <h3 className="text-lg font-bold mb-3 font-serif" style={{ color: '#D4AF37' }}>⚡ Quick Templates</h3>
+                      <div className="space-y-2">
+                        <button onClick={() => applyTemplate('weekend-special')} className="w-full glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-left" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎉</span>
+                            <div>
+                              <h4 className="font-bold text-white text-sm font-sans">Weekend Special</h4>
+                              <p className="text-xs text-gray-400 font-sans">30% off + products</p>
+                            </div>
+                          </div>
+                        </button>
+                        <button onClick={() => applyTemplate('holiday-sale')} className="w-full glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-left" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎄</span>
+                            <div>
+                              <h4 className="font-bold text-white text-sm font-sans">Holiday Sale</h4>
+                              <p className="text-xs text-gray-400 font-sans">Countdown + code</p>
+                            </div>
+                          </div>
+                        </button>
+                        <button onClick={() => applyTemplate('flash-sale')} className="w-full glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-left" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">⚡</span>
+                            <div>
+                              <h4 className="font-bold text-white text-sm font-sans">Flash Sale</h4>
+                              <p className="text-xs text-gray-400 font-sans">Urgent banner</p>
+                            </div>
+                          </div>
+                        </button>
+                        <button onClick={() => applyTemplate('bogo-promotion')} className="w-full glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-left" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎁</span>
+                            <div>
+                              <h4 className="font-bold text-white text-sm font-sans">BOGO Deal</h4>
+                              <p className="text-xs text-gray-400 font-sans">Buy 1 get 1 free</p>
+                            </div>
+                          </div>
+                        </button>
+                        <button onClick={() => applyTemplate('vip-special')} className="w-full glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-left" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">👑</span>
+                            <div>
+                              <h4 className="font-bold text-white text-sm font-sans">VIP Special</h4>
+                              <p className="text-xs text-gray-400 font-sans">Exclusive offer</p>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Block Library Section */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-4">
+                      <h3 className="text-lg font-bold mb-3 font-serif" style={{ color: '#D4AF37' }}>📦 Add Blocks</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => addContentBlock('promo-banner')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">🎉</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Promo</h4>
+                        </button>
+                        <button onClick={() => addContentBlock('announcement')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">📢</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Announce</h4>
+                        </button>
+                        <button onClick={() => addContentBlock('special-offer')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">💎</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Offer</h4>
+                        </button>
+                        <button onClick={() => addContentBlock('featured-products')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">⭐</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Products</h4>
+                        </button>
+                        <button onClick={() => addContentBlock('image')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">🖼️</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Image</h4>
+                        </button>
+                        <button onClick={() => addContentBlock('text')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                          <div className="text-2xl mb-1">📝</div>
+                          <h4 className="font-bold text-white text-xs font-sans">Text</h4>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Panel - Live Preview (2/3 width) */}
+                  <div className="lg:col-span-2">
+                    <div className="glass-morphism rounded-xl luxury-shadow p-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold font-serif" style={{ color: '#D4AF37' }}>👁️ Live Preview</h3>
+                        <span className="text-xs text-gray-400 font-sans">{siteContent.contentBlocks.length} blocks</span>
+                      </div>
+
+                      {/* Preview Container with Responsive Sizing */}
+                      <div className={`mx-auto transition-all duration-300 ${
+                        previewMode === 'mobile' ? 'max-w-[375px]' :
+                        previewMode === 'tablet' ? 'max-w-[768px]' :
+                        'max-w-full'
+                      }`}>
+                        <div className="bg-black/40 rounded-lg p-4 min-h-[600px] max-h-[800px] overflow-y-auto">
+                          {siteContent.contentBlocks.length === 0 ? (
+                            <div className="text-center py-20">
+                              <div className="text-6xl mb-4">📄</div>
+                              <p className="text-gray-400 font-sans">No blocks yet. Add blocks or apply a template to get started!</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {siteContent.contentBlocks.map((block, index) => (
+                                <div
+                                  key={block.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, index)}
+                                  onDragOver={(e) => handleDragOver(e, index)}
+                                  onDragLeave={handleDragLeave}
+                                  onDrop={(e) => handleDrop(e, index)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`relative group cursor-move transition-all duration-200 ${
+                                    draggedBlockIndex === index ? 'opacity-50' : ''
+                                  } ${
+                                    dragOverIndex === index ? 'border-t-4 border-gold' : ''
+                                  }`}
+                                >
+                                  {/* Drag Handle & Controls Overlay */}
+                                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                                    <button
+                                      onClick={() => setEditingBlock(block)}
+                                      className="bg-black/80 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-gold hover:text-black transition-all duration-300"
+                                      title="Edit Block"
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                    <button
+                                      onClick={() => toggleBlockVisibility(block.id)}
+                                      className="bg-black/80 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-gold hover:text-black transition-all duration-300"
+                                      title={block.visible ? 'Hide' : 'Show'}
+                                    >
+                                      {block.visible ? '👁️' : '🚫'}
+                                    </button>
+                                    <button
+                                      onClick={() => deleteContentBlock(block.id)}
+                                      className="bg-black/80 text-red-400 px-3 py-1 rounded text-xs font-semibold hover:bg-red-500 hover:text-white transition-all duration-300"
+                                      title="Delete Block"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+
+                                  {/* Block Preview */}
+                                  <div className={`${!block.visible ? 'opacity-50' : ''}`}>
+                                    <ContentBlockRenderer block={block} />
+                                  </div>
+
+                                  {/* Drag Indicator */}
+                                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* List View Mode - Original Interface */}
+              {pageBuilderView === 'list' && (
+                <>
               {/* Quick Templates */}
               <div className="glass-morphism rounded-xl luxury-shadow p-6">
                 <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Quick Templates</h2>
@@ -3136,6 +3403,8 @@ const App = () => {
                   {googleDriveConfig.authenticated ? '💾 Save to Google Drive' : '💾 Save Layout'}
                 </button>
               </div>
+              </>
+              )}
             </div>
           )}
 
