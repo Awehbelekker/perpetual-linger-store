@@ -208,6 +208,148 @@ const CountdownTimer = ({ endDate }) => {
   );
 };
 
+// Image Picker Component
+const ImagePicker = ({ value, onChange, imageLibrary, loadingImages, onUpload, onRefreshLibrary, label = "Image" }) => {
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [uploadMode, setUploadMode] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-white mb-2 font-sans">{label}:</label>
+
+      {/* Mode Toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => { setUploadMode(false); setShowLibrary(true); }}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+            showLibrary && !uploadMode ? 'luxury-gradient text-black' : 'glass-morphism text-white hover:scale-105'
+          }`}
+        >
+          📁 Select from Library
+        </button>
+        <button
+          onClick={() => { setUploadMode(true); setShowLibrary(false); }}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+            uploadMode ? 'luxury-gradient text-black' : 'glass-morphism text-white hover:scale-105'
+          }`}
+        >
+          ⬆️ Upload New
+        </button>
+      </div>
+
+      {/* Image Library */}
+      {showLibrary && !uploadMode && (
+        <div className="border-2 rounded-lg p-4 bg-black/30" style={{ borderColor: '#D4AF37' }}>
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="text-white font-semibold text-sm">Image Library</h4>
+            <button
+              onClick={onRefreshLibrary}
+              className="text-xs px-2 py-1 rounded glass-morphism text-white hover:scale-105 transition-all"
+            >
+              🔄 Refresh
+            </button>
+          </div>
+
+          {loadingImages ? (
+            <div className="text-center py-8 text-gray-400">Loading images...</div>
+          ) : imageLibrary.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <p>No images in library yet.</p>
+              <p className="text-xs mt-2">Upload your first image to get started!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+              {imageLibrary.map((image) => (
+                <div
+                  key={image.id}
+                  onClick={() => {
+                    onChange(image.url);
+                    setShowLibrary(false);
+                  }}
+                  className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                    value === image.url ? 'border-gold' : 'border-transparent hover:border-gold/50'
+                  }`}
+                >
+                  <img
+                    src={image.thumbnail}
+                    alt={image.name}
+                    className="w-full h-20 object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-1 py-0.5">
+                    <p className="text-xs text-white truncate">{image.name}</p>
+                  </div>
+                  {value === image.url && (
+                    <div className="absolute top-1 right-1 bg-gold text-black rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      ✓
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upload New */}
+      {uploadMode && (
+        <div>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="image-upload-input"
+            onChange={async (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                await onUpload(file);
+                setUploadMode(false);
+              }
+              e.target.value = '';
+            }}
+          />
+          <label htmlFor="image-upload-input">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-black/20 transition-all"
+              style={{ borderColor: '#D4AF37' }}>
+              <div className="text-4xl mb-2">📸</div>
+              <p className="text-white font-semibold">Click to upload image</p>
+              <p className="text-xs text-gray-400 mt-1">Will be saved to Google Drive</p>
+            </div>
+          </label>
+        </div>
+      )}
+
+      {/* Current Image Preview */}
+      {value && !showLibrary && !uploadMode && (
+        <div className="border-2 rounded-lg p-2 bg-black/30" style={{ borderColor: '#D4AF37' }}>
+          <img src={value} alt="Selected" className="w-full h-32 object-cover rounded" />
+          <button
+            onClick={() => setShowLibrary(true)}
+            className="w-full mt-2 text-xs px-2 py-1 rounded glass-morphism text-white hover:scale-105 transition-all"
+          >
+            Change Image
+          </button>
+        </div>
+      )}
+
+      {/* Manual URL Input (fallback) */}
+      {!showLibrary && !uploadMode && (
+        <div>
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Or paste image URL..."
+            className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans text-sm"
+            style={{ borderColor: '#D4AF37' }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Content Block Renderer Component
 const ContentBlockRenderer = ({ block, allProducts }) => {
   if (!block.visible) return null;
@@ -514,6 +656,10 @@ const App = () => {
   const [pageBuilderView, setPageBuilderView] = useState('visual'); // 'visual' or 'list'
   const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
   const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  // Image Library Management
+  const [imageLibrary, setImageLibrary] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const addContentBlock = (blockType) => {
     const newBlock = {
@@ -1041,6 +1187,9 @@ const App = () => {
             // Try to find or create the content file
             await findOrCreateContentFile(response.access_token);
 
+            // Fetch image library
+            await fetchImagesFromGoogleDrive();
+
             addToast('Successfully connected to Google Drive!', 'success');
             setIsAuthenticating(false);
           } else {
@@ -1276,6 +1425,10 @@ const App = () => {
 
           // Return public URL
           const publicUrl = `https://drive.google.com/uc?export=view&id=${fileData.id}`;
+
+          // Refresh image library after upload
+          fetchImagesFromGoogleDrive();
+
           resolve(publicUrl);
         };
 
@@ -1287,6 +1440,87 @@ const App = () => {
       console.error('Error uploading image:', error);
       addToast('Error uploading image: ' + error.message, 'error');
       return null;
+    }
+  };
+
+  // Fetch all images from Google Drive
+  const fetchImagesFromGoogleDrive = async () => {
+    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+      return [];
+    }
+
+    setLoadingImages(true);
+    try {
+      // Query for all image files in the images folder
+      let query = "mimeType contains 'image/'";
+      if (googleDriveConfig.imagesFolderId) {
+        query += ` and '${googleDriveConfig.imagesFolderId}' in parents`;
+      }
+
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,createdTime,thumbnailLink,webContentLink)&orderBy=createdTime desc`,
+        {
+          headers: {
+            'Authorization': `Bearer ${googleDriveConfig.accessToken}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch images: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const images = data.files.map(file => ({
+        id: file.id,
+        name: file.name,
+        url: `https://drive.google.com/uc?export=view&id=${file.id}`,
+        thumbnail: file.thumbnailLink || `https://drive.google.com/uc?export=view&id=${file.id}`,
+        createdTime: file.createdTime,
+        mimeType: file.mimeType
+      }));
+
+      setImageLibrary(images);
+      return images;
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      addToast('Error loading image library: ' + error.message, 'error');
+      return [];
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  // Delete image from Google Drive
+  const deleteImageFromGoogleDrive = async (imageId) => {
+    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+      addToast('Google Drive not connected', 'error');
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${imageId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${googleDriveConfig.accessToken}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete image: ${response.status}`);
+      }
+
+      // Refresh image library
+      await fetchImagesFromGoogleDrive();
+      addToast('Image deleted successfully!', 'success');
+      return true;
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      addToast('Error deleting image: ' + error.message, 'error');
+      return false;
     }
   };
 
@@ -3075,7 +3309,12 @@ const App = () => {
 
                         {/* Edit Form */}
                         {editingBlock === block.id && (
-                          <div className="mt-4 pt-4 border-t-2" style={{ borderColor: '#D4AF37' }}>
+                          <div
+                            className="mt-4 pt-4 border-t-2"
+                            style={{ borderColor: '#D4AF37' }}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
                             <h4 className="font-bold text-white mb-4 font-sans">Edit Block</h4>
 
                             {/* Promo Banner Editor */}
@@ -3085,6 +3324,8 @@ const App = () => {
                                   type="text"
                                   value={block.title}
                                   onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Title"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3093,6 +3334,8 @@ const App = () => {
                                   type="text"
                                   value={block.subtitle}
                                   onChange={(e) => updateContentBlock(block.id, { subtitle: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Subtitle"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3101,6 +3344,7 @@ const App = () => {
                                   <select
                                     value={block.backgroundColor}
                                     onChange={(e) => updateContentBlock(block.id, { backgroundColor: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                     className="p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                     style={{ borderColor: '#D4AF37' }}
                                   >
@@ -3111,6 +3355,7 @@ const App = () => {
                                   <select
                                     value={block.textColor}
                                     onChange={(e) => updateContentBlock(block.id, { textColor: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                     className="p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                     style={{ borderColor: '#D4AF37' }}
                                   >
@@ -3123,6 +3368,8 @@ const App = () => {
                                   type="text"
                                   value={block.buttonText}
                                   onChange={(e) => updateContentBlock(block.id, { buttonText: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Button Text"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3132,6 +3379,7 @@ const App = () => {
                                     type="checkbox"
                                     checked={block.showCountdown}
                                     onChange={(e) => updateContentBlock(block.id, { showCountdown: e.target.checked })}
+                                    onClick={(e) => e.stopPropagation()}
                                     style={{ accentColor: '#D4AF37' }}
                                   />
                                   <span>Show Countdown Timer</span>
@@ -3141,6 +3389,7 @@ const App = () => {
                                     type="date"
                                     value={block.endDate}
                                     onChange={(e) => updateContentBlock(block.id, { endDate: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                     className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                     style={{ borderColor: '#D4AF37' }}
                                   />
@@ -3161,6 +3410,8 @@ const App = () => {
                                   type="text"
                                   value={block.text}
                                   onChange={(e) => updateContentBlock(block.id, { text: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Announcement text"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3169,6 +3420,8 @@ const App = () => {
                                   type="text"
                                   value={block.icon}
                                   onChange={(e) => updateContentBlock(block.id, { icon: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Icon (emoji)"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3189,6 +3442,8 @@ const App = () => {
                                   type="text"
                                   value={block.title}
                                   onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Title"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3197,6 +3452,8 @@ const App = () => {
                                   type="text"
                                   value={block.description}
                                   onChange={(e) => updateContentBlock(block.id, { description: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Description"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3205,6 +3462,8 @@ const App = () => {
                                   type="text"
                                   value={block.code}
                                   onChange={(e) => updateContentBlock(block.id, { code: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Discount Code"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3213,6 +3472,8 @@ const App = () => {
                                   type="text"
                                   value={block.discount}
                                   onChange={(e) => updateContentBlock(block.id, { discount: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Discount (e.g., 20% OFF)"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3233,6 +3494,8 @@ const App = () => {
                                   type="text"
                                   value={block.title}
                                   onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Section Title"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3280,52 +3543,45 @@ const App = () => {
                             {/* Image Editor */}
                             {block.type === 'image' && (
                               <div className="space-y-3">
-                                <div>
-                                  <label className="block text-white mb-2 font-sans">Image URL:</label>
-                                  <input
-                                    type="text"
+                                {googleDriveConfig.authenticated ? (
+                                  <ImagePicker
                                     value={block.imageUrl}
-                                    onChange={(e) => updateContentBlock(block.id, { imageUrl: e.target.value })}
-                                    placeholder="https://..."
-                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
-                                    style={{ borderColor: '#D4AF37' }}
-                                  />
-                                </div>
-
-                                {/* Drag & Drop Upload */}
-                                <div
-                                  onDragOver={(e) => e.preventDefault()}
-                                  onDrop={async (e) => {
-                                    e.preventDefault();
-                                    const file = e.dataTransfer.files[0];
-                                    if (file && file.type.startsWith('image/')) {
-                                      if (googleDriveConfig.authenticated) {
-                                        addToast('Uploading image to Google Drive...', 'info');
-                                        const url = await uploadImageToGoogleDrive(file);
-                                        if (url) {
-                                          updateContentBlock(block.id, { imageUrl: url });
-                                          addToast('Image uploaded successfully!', 'success');
-                                        }
-                                      } else {
-                                        addToast('Please connect Google Drive first', 'error');
+                                    onChange={(url) => updateContentBlock(block.id, { imageUrl: url })}
+                                    imageLibrary={imageLibrary}
+                                    loadingImages={loadingImages}
+                                    onUpload={async (file) => {
+                                      addToast('Uploading image...', 'info');
+                                      const url = await uploadImageToGoogleDrive(file);
+                                      if (url) {
+                                        updateContentBlock(block.id, { imageUrl: url });
+                                        addToast('Image uploaded successfully!', 'success');
                                       }
-                                    }
-                                  }}
-                                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-black/20 transition-all"
-                                  style={{ borderColor: '#D4AF37' }}
-                                >
-                                  <p className="text-gray-400 font-sans">Drag & drop image here</p>
-                                  <p className="text-xs text-gray-500 mt-1 font-sans">or paste URL above</p>
-                                </div>
-
-                                {block.imageUrl && (
-                                  <img src={block.imageUrl} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                                    }}
+                                    onRefreshLibrary={fetchImagesFromGoogleDrive}
+                                    label="Block Image"
+                                  />
+                                ) : (
+                                  <div>
+                                    <label className="block text-white mb-2 font-sans">Image URL:</label>
+                                    <input
+                                      type="text"
+                                      value={block.imageUrl}
+                                      onChange={(e) => updateContentBlock(block.id, { imageUrl: e.target.value })}
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                      onClick={(e) => e.stopPropagation()}
+                                      placeholder="https://... (or connect Google Drive for image library)"
+                                      className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                      style={{ borderColor: '#D4AF37' }}
+                                    />
+                                  </div>
                                 )}
 
                                 <input
                                   type="text"
                                   value={block.altText}
                                   onChange={(e) => updateContentBlock(block.id, { altText: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Alt text (for accessibility)"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3334,6 +3590,7 @@ const App = () => {
                                 <select
                                   value={block.height}
                                   onChange={(e) => updateContentBlock(block.id, { height: e.target.value })}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
                                 >
@@ -3346,6 +3603,8 @@ const App = () => {
                                   type="text"
                                   value={block.link}
                                   onChange={(e) => updateContentBlock(block.id, { link: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Link URL (optional)"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
@@ -3366,6 +3625,8 @@ const App = () => {
                                 <textarea
                                   value={block.content}
                                   onChange={(e) => updateContentBlock(block.id, { content: e.target.value })}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => e.stopPropagation()}
                                   placeholder="Your text content..."
                                   rows="4"
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
