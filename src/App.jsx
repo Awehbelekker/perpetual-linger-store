@@ -4207,6 +4207,68 @@ const App = () => {
                 <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>✨ Visual Effects Control Panel</h2>
 
                 <div className="space-y-6">
+                  {/* Holiday Theme Presets */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <h3 className="text-white font-semibold text-lg mb-4">🎨 Holiday Theme Presets</h3>
+                    <p className="text-gray-400 text-sm mb-4">Quickly apply themed particle effects for special occasions</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        {
+                          name: '🎄 Christmas',
+                          settings: { enabled: true, speed: 0.8, intensity: 70, color: '#C41E3A', count: 70, brightness: 90 },
+                          bgColor: '#165B33'
+                        },
+                        {
+                          name: '💝 Valentine\'s',
+                          settings: { enabled: true, speed: 1.2, intensity: 60, color: '#FF1493', count: 60, brightness: 85 },
+                          bgColor: '#C71585'
+                        },
+                        {
+                          name: '🐰 Easter',
+                          settings: { enabled: true, speed: 1.5, intensity: 55, color: '#FFD700', count: 50, brightness: 80 },
+                          bgColor: '#9370DB'
+                        },
+                        {
+                          name: '🎃 Halloween',
+                          settings: { enabled: true, speed: 0.6, intensity: 80, color: '#FF8C00', count: 80, brightness: 75 },
+                          bgColor: '#4B0082'
+                        },
+                        {
+                          name: '🛍️ Black Friday',
+                          settings: { enabled: true, speed: 2, intensity: 90, color: '#FFD700', count: 90, brightness: 95 },
+                          bgColor: '#000000'
+                        },
+                        {
+                          name: '☀️ Summer',
+                          settings: { enabled: true, speed: 1.8, intensity: 45, color: '#FFD700', count: 40, brightness: 100 },
+                          bgColor: '#87CEEB'
+                        },
+                        {
+                          name: '❄️ Winter',
+                          settings: { enabled: true, speed: 0.5, intensity: 65, color: '#FFFFFF', count: 75, brightness: 70 },
+                          bgColor: '#4682B4'
+                        },
+                        {
+                          name: '✨ Default Luxury',
+                          settings: { enabled: true, speed: 1, intensity: 50, color: '#D4AF37', count: 50, brightness: 80 },
+                          bgColor: '#D4AF37'
+                        },
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          onClick={() => {
+                            setParticleEffects(preset.settings);
+                            addToast(`${preset.name} theme applied!`, 'success');
+                          }}
+                          className="p-4 rounded-lg transition-all duration-300 hover:scale-105 text-white font-semibold"
+                          style={{ backgroundColor: preset.bgColor }}
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Enable/Disable Toggle */}
                   <div className="flex items-center justify-between p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
                     <div>
