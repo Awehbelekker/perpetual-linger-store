@@ -5573,19 +5573,19 @@ const App = () => {
       <Navigation />
       <Cart />
 
-      {currentPage === 'home' && <HomePage />}
-      {currentPage === 'forHer' && <ProductGrid products={productList.forHer} title={siteContent.sections.forHer} />}
-      {currentPage === 'forHim' && <ProductGrid products={productList.forHim} title={siteContent.sections.forHim} />}
-      {currentPage === 'product' && <ProductPage />}
-      {currentPage === 'about' && <AboutPage />}
-      {currentPage === 'contact' && <ContactPage />}
-      {currentPage === 'perfumeUsage' && <PerfumeUsagePage />}
-      {currentPage === 'refundPolicy' && <RefundPolicyPage />}
-      {currentPage === 'termsNotice' && <TermsNoticePage />}
-      {currentPage === 'adminLogin' && <AdminLogin />}
+      {currentPage === 'home' && !isAdmin && <HomePage />}
+      {currentPage === 'forHer' && !isAdmin && <ProductGrid products={productList.forHer} title={siteContent.sections.forHer} />}
+      {currentPage === 'forHim' && !isAdmin && <ProductGrid products={productList.forHim} title={siteContent.sections.forHim} />}
+      {currentPage === 'product' && !isAdmin && <ProductPage />}
+      {currentPage === 'about' && !isAdmin && <AboutPage />}
+      {currentPage === 'contact' && !isAdmin && <ContactPage />}
+      {currentPage === 'perfumeUsage' && !isAdmin && <PerfumeUsagePage />}
+      {currentPage === 'refundPolicy' && !isAdmin && <RefundPolicyPage />}
+      {currentPage === 'termsNotice' && !isAdmin && <TermsNoticePage />}
+      {currentPage === 'adminLogin' && !isAdmin && <AdminLogin />}
       {currentPage === 'admin' && isAdmin && <AdminPanel />}
 
-      <Footer />
+      {!isAdmin && <Footer />}
     </div>
   );
 };
