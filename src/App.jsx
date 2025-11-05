@@ -160,6 +160,222 @@ const products = {
   ]
 };
 
+// Countdown Timer Component
+const CountdownTimer = ({ endDate }) => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = new Date(endDate) - new Date();
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60)
+        });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endDate]);
+
+  return (
+    <div className="flex justify-center space-x-4 text-center">
+      <div className="bg-black/40 px-3 py-2 rounded-lg">
+        <div className="text-2xl font-bold" style={{ color: '#D4AF37' }}>{String(timeLeft.days).padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400">Days</div>
+      </div>
+      <div className="bg-black/40 px-3 py-2 rounded-lg">
+        <div className="text-2xl font-bold" style={{ color: '#D4AF37' }}>{String(timeLeft.hours).padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400">Hrs</div>
+      </div>
+      <div className="bg-black/40 px-3 py-2 rounded-lg">
+        <div className="text-2xl font-bold" style={{ color: '#D4AF37' }}>{String(timeLeft.minutes).padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400">Min</div>
+      </div>
+      <div className="bg-black/40 px-3 py-2 rounded-lg">
+        <div className="text-2xl font-bold" style={{ color: '#D4AF37' }}>{String(timeLeft.seconds).padStart(2, '0')}</div>
+        <div className="text-xs text-gray-400">Sec</div>
+      </div>
+    </div>
+  );
+};
+
+// Content Block Renderer Component
+const ContentBlockRenderer = ({ block, allProducts }) => {
+  if (!block.visible) return null;
+
+  const getBackgroundColor = (color) => {
+    const colors = {
+      gold: 'linear-gradient(135deg, #D4AF37 0%, #F4E5B0 100%)',
+      black: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+      red: 'linear-gradient(135deg, #8B0000 0%, #DC143C 100%)'
+    };
+    return colors[color] || colors.gold;
+  };
+
+  const getTextColor = (color) => {
+    const colors = {
+      gold: '#D4AF37',
+      black: '#000000',
+      white: '#FFFFFF'
+    };
+    return colors[color] || colors.white;
+  };
+
+  switch (block.type) {
+    case 'promo-banner':
+      return (
+        <div
+          className="glass-morphism rounded-2xl p-8 md:p-12 text-center luxury-shadow mb-8"
+          style={{ background: getBackgroundColor(block.backgroundColor) }}
+        >
+          <h2 className="text-4xl md:text-6xl font-bold font-serif mb-4" style={{ color: getTextColor(block.textColor) }}>
+            {block.title}
+          </h2>
+          <p className="text-xl md:text-2xl mb-6 font-sans" style={{ color: getTextColor(block.textColor), opacity: 0.9 }}>
+            {block.subtitle}
+          </p>
+          {block.showCountdown && block.endDate && (
+            <div className="mb-6">
+              <CountdownTimer endDate={block.endDate} />
+            </div>
+          )}
+          {block.buttonText && (
+            <a
+              href={block.buttonLink}
+              className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 luxury-shadow"
+              style={{
+                background: block.backgroundColor === 'gold' ? '#000000' : getBackgroundColor('gold'),
+                color: block.backgroundColor === 'gold' ? '#D4AF37' : '#000000'
+              }}
+            >
+              {block.buttonText}
+            </a>
+          )}
+        </div>
+      );
+
+    case 'announcement':
+      return (
+        <div
+          className="glass-morphism rounded-xl p-4 text-center mb-8 luxury-shadow"
+          style={{ background: getBackgroundColor(block.backgroundColor) }}
+        >
+          <p className="text-lg md:text-xl font-semibold font-sans" style={{ color: getTextColor(block.textColor) }}>
+            {block.icon && <span className="mr-2">{block.icon}</span>}
+            {block.text}
+          </p>
+        </div>
+      );
+
+    case 'special-offer':
+      return (
+        <div
+          className="glass-morphism rounded-2xl p-8 text-center mb-8 luxury-shadow"
+          style={{ background: getBackgroundColor(block.backgroundColor) }}
+        >
+          <h3 className="text-3xl font-bold font-serif mb-3" style={{ color: getTextColor(block.textColor) }}>
+            {block.title}
+          </h3>
+          <p className="text-lg mb-4 font-sans" style={{ color: getTextColor(block.textColor), opacity: 0.9 }}>
+            {block.description}
+          </p>
+          <div className="inline-block bg-black/40 px-6 py-3 rounded-lg border-2 border-dashed mb-2" style={{ borderColor: getTextColor(block.textColor) }}>
+            <p className="text-sm font-sans" style={{ color: getTextColor(block.textColor), opacity: 0.8 }}>Use Code:</p>
+            <p className="text-2xl font-bold font-mono" style={{ color: getTextColor(block.textColor) }}>{block.code}</p>
+          </div>
+          <p className="text-xl font-bold font-sans" style={{ color: getTextColor(block.textColor) }}>{block.discount}</p>
+        </div>
+      );
+
+    case 'featured-products':
+      const selectedProducts = block.productIds
+        .map(id => allProducts.find(p => p.id === id))
+        .filter(Boolean)
+        .slice(0, block.columns);
+
+      if (selectedProducts.length === 0) return null;
+
+      return (
+        <div className="mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold font-serif text-center mb-8" style={{ color: '#D4AF37' }}>
+            {block.title}
+          </h2>
+          <div className={`grid grid-cols-1 md:grid-cols-${block.columns} gap-6`}>
+            {selectedProducts.map(product => (
+              <div key={product.id} className="glass-morphism rounded-xl overflow-hidden luxury-shadow hover:scale-105 transition-all duration-300 cursor-pointer">
+                <img src={product.images?.[product.mainImageIndex || 0]} alt={product.name} className="w-full h-64 object-cover" />
+                <div className="p-4">
+                  <h3 className="font-serif text-xl font-bold text-white mb-2">{product.name}</h3>
+                  <p className="text-sm font-sans" style={{ color: '#D4AF37' }}>{product.category}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'image':
+      if (!block.imageUrl) return null;
+
+      const heightClasses = {
+        small: 'h-48',
+        medium: 'h-64 md:h-96',
+        large: 'h-96 md:h-[600px]'
+      };
+
+      const ImageContent = (
+        <img
+          src={block.imageUrl}
+          alt={block.altText || 'Content image'}
+          className={`w-full ${heightClasses[block.height] || heightClasses.medium} object-cover rounded-2xl luxury-shadow`}
+        />
+      );
+
+      return (
+        <div className="mb-8">
+          {block.link ? (
+            <a href={block.link}>{ImageContent}</a>
+          ) : (
+            ImageContent
+          )}
+        </div>
+      );
+
+    case 'text':
+      const alignmentClasses = {
+        left: 'text-left',
+        center: 'text-center',
+        right: 'text-right'
+      };
+
+      const fontSizeClasses = {
+        small: 'text-base md:text-lg',
+        medium: 'text-lg md:text-xl',
+        large: 'text-xl md:text-3xl'
+      };
+
+      return (
+        <div className={`glass-morphism rounded-xl p-6 md:p-8 mb-8 ${alignmentClasses[block.alignment] || alignmentClasses.center}`}>
+          <p className={`font-sans text-white ${fontSizeClasses[block.fontSize] || fontSizeClasses.medium} leading-relaxed`}>
+            {block.content}
+          </p>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
+
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [cart, setCart] = useState([]);
@@ -171,6 +387,7 @@ const App = () => {
 
   // CMS Content State - Load from localStorage or use defaults
   const defaultContent = {
+    logo: '/Final.png', // Site logo
     hero: {
       heading: 'Perpetual Linger',
       tagline: "They'll Never Forget",
@@ -200,7 +417,8 @@ const App = () => {
       whatsappText: 'Chat with us on WhatsApp for instant assistance',
       emailText: 'Send us an email and we\'ll respond within 24 hours',
       locationText: 'Based in South Africa, shipping nationwide'
-    }
+    },
+    contentBlocks: [] // Dynamic content blocks for homepage
   };
 
   // Google Drive OAuth 2.0 Configuration
@@ -288,6 +506,232 @@ const App = () => {
         [field]: value
       }
     }));
+  };
+
+  // Content Blocks Management
+  const [editingBlock, setEditingBlock] = useState(null);
+  const [draggedBlockIndex, setDraggedBlockIndex] = useState(null);
+
+  const addContentBlock = (blockType) => {
+    const newBlock = {
+      id: Date.now(),
+      type: blockType,
+      visible: true,
+      ...getDefaultBlockData(blockType)
+    };
+
+    setSiteContent(prev => ({
+      ...prev,
+      contentBlocks: [...prev.contentBlocks, newBlock]
+    }));
+
+    setEditingBlock(newBlock.id);
+    addToast('Block added! Click edit to customize.', 'success');
+  };
+
+  const getDefaultBlockData = (blockType) => {
+    switch (blockType) {
+      case 'promo-banner':
+        return {
+          title: 'Special Offer!',
+          subtitle: 'Limited time only',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Shop Now',
+          buttonLink: '#products',
+          showCountdown: false,
+          endDate: ''
+        };
+      case 'featured-products':
+        return {
+          title: 'Featured Collection',
+          productIds: [],
+          columns: 4
+        };
+      case 'announcement':
+        return {
+          text: 'Important announcement goes here',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          icon: '📢'
+        };
+      case 'special-offer':
+        return {
+          title: 'Special Discount',
+          description: 'Use code at checkout',
+          code: 'SAVE20',
+          discount: '20% OFF',
+          backgroundColor: 'gold',
+          textColor: 'black'
+        };
+      case 'image':
+        return {
+          imageUrl: '',
+          altText: '',
+          link: '',
+          height: 'medium'
+        };
+      case 'text':
+        return {
+          content: 'Your custom text here...',
+          alignment: 'center',
+          fontSize: 'medium'
+        };
+      default:
+        return {};
+    }
+  };
+
+  const updateContentBlock = (blockId, updates) => {
+    setSiteContent(prev => ({
+      ...prev,
+      contentBlocks: prev.contentBlocks.map(block =>
+        block.id === blockId ? { ...block, ...updates } : block
+      )
+    }));
+  };
+
+  const deleteContentBlock = (blockId) => {
+    if (confirm('Delete this content block?')) {
+      setSiteContent(prev => ({
+        ...prev,
+        contentBlocks: prev.contentBlocks.filter(block => block.id !== blockId)
+      }));
+      addToast('Block deleted', 'success');
+    }
+  };
+
+  const toggleBlockVisibility = (blockId) => {
+    setSiteContent(prev => ({
+      ...prev,
+      contentBlocks: prev.contentBlocks.map(block =>
+        block.id === blockId ? { ...block, visible: !block.visible } : block
+      )
+    }));
+  };
+
+  const moveBlock = (fromIndex, toIndex) => {
+    setSiteContent(prev => {
+      const blocks = [...prev.contentBlocks];
+      const [movedBlock] = blocks.splice(fromIndex, 1);
+      blocks.splice(toIndex, 0, movedBlock);
+      return { ...prev, contentBlocks: blocks };
+    });
+  };
+
+  const applyTemplate = (templateName) => {
+    const templates = {
+      'weekend-special': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: 'Weekend Special - 30% OFF!',
+          subtitle: 'All 100ml bottles',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Shop Now',
+          buttonLink: '#products',
+          showCountdown: true,
+          endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        },
+        {
+          id: Date.now() + 1,
+          type: 'featured-products',
+          visible: true,
+          title: 'Featured This Weekend',
+          productIds: [],
+          columns: 4
+        }
+      ],
+      'holiday-sale': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: 'Holiday Sale - Up to 50% OFF!',
+          subtitle: 'Limited time offer',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          buttonText: 'Shop Sale',
+          buttonLink: '#products',
+          showCountdown: true,
+          endDate: ''
+        },
+        {
+          id: Date.now() + 1,
+          type: 'special-offer',
+          visible: true,
+          title: 'Extra Discount',
+          description: 'Use code at checkout for additional savings',
+          code: 'HOLIDAY25',
+          discount: '25% OFF',
+          backgroundColor: 'gold',
+          textColor: 'black'
+        }
+      ],
+      'new-arrivals': [
+        {
+          id: Date.now(),
+          type: 'announcement',
+          visible: true,
+          text: '🎉 Just Arrived: 5 New Designer Scents!',
+          backgroundColor: 'black',
+          textColor: 'gold',
+          icon: '🎉'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'featured-products',
+          visible: true,
+          title: 'New Arrivals',
+          productIds: [],
+          columns: 4
+        }
+      ],
+      'seasonal-collection': [
+        {
+          id: Date.now(),
+          type: 'image',
+          visible: true,
+          imageUrl: '',
+          altText: 'Seasonal Collection',
+          link: '#products',
+          height: 'large'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'featured-products',
+          visible: true,
+          title: 'Perfect for the Season',
+          productIds: [],
+          columns: 4
+        }
+      ],
+      'flash-sale': [
+        {
+          id: Date.now(),
+          type: 'promo-banner',
+          visible: true,
+          title: '⚡ FLASH SALE - 50% OFF!',
+          subtitle: 'Ends Soon!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Grab It Now',
+          buttonLink: '#products',
+          showCountdown: true,
+          endDate: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString().split('T')[0]
+        }
+      ]
+    };
+
+    if (templates[templateName]) {
+      setSiteContent(prev => ({
+        ...prev,
+        contentBlocks: templates[templateName]
+      }));
+      addToast(`${templateName.replace('-', ' ')} template applied!`, 'success');
+    }
   };
 
   // OAuth 2.0 Authentication
@@ -893,7 +1337,7 @@ const App = () => {
                 onClick={() => setCurrentPage('home')}
               >
                 <img
-                  src="/Final.png"
+                  src={siteContent.logo}
                   alt="Perpetual Linger Logo"
                   className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
                 />
@@ -1000,7 +1444,7 @@ const App = () => {
         <div className="relative text-center text-white px-4 z-10 animate-fadeIn">
           <div className="flex justify-center mb-8">
             <img
-              src="/Final.png"
+              src={siteContent.logo}
               alt="Perpetual Linger Logo"
               className="h-64 md:h-96 w-auto"
               style={{
@@ -1041,6 +1485,22 @@ const App = () => {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Content Blocks */}
+      {siteContent.contentBlocks && siteContent.contentBlocks.length > 0 && (
+        <div className="py-12 bg-gradient-to-b from-black to-neutral-900 relative overflow-hidden">
+          <div className="absolute inset-0 texture-overlay opacity-20"></div>
+          <div className="max-w-7xl mx-auto px-4 relative z-10">
+            {siteContent.contentBlocks.map(block => (
+              <ContentBlockRenderer
+                key={block.id}
+                block={block}
+                allProducts={[...products.forHer, ...products.forHim]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Most Popular Fragrances */}
       <div className="py-20 bg-gradient-to-b from-black to-neutral-900 relative overflow-hidden">
@@ -1434,6 +1894,17 @@ const App = () => {
               Product Management
             </button>
             <button
+              onClick={() => setAdminTab('pageBuilder')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'pageBuilder'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'pageBuilder' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              📐 Page Builder
+            </button>
+            <button
               onClick={() => setAdminTab('cms')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'cms'
@@ -1798,9 +2269,665 @@ const App = () => {
           </div>
           )}
 
+          {/* Page Builder Tab */}
+          {adminTab === 'pageBuilder' && (
+            <div className="space-y-6">
+              {/* Quick Templates */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Quick Templates</h2>
+                <p className="text-gray-400 mb-6 font-sans">Apply pre-made layouts for common scenarios. You can customize after applying.</p>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => applyTemplate('weekend-special')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎉</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Weekend Special</h3>
+                    <p className="text-sm text-gray-400 font-sans">30% off banner + featured products</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('holiday-sale')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎄</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Holiday Sale</h3>
+                    <p className="text-sm text-gray-400 font-sans">Countdown + discount code</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('new-arrivals')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">✨</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">New Arrivals</h3>
+                    <p className="text-sm text-gray-400 font-sans">Announcement + product grid</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('seasonal-collection')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🌸</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Seasonal Collection</h3>
+                    <p className="text-sm text-gray-400 font-sans">Image + featured products</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('flash-sale')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">⚡</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Flash Sale</h3>
+                    <p className="text-sm text-gray-400 font-sans">Urgent countdown banner</p>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (confirm('Clear all content blocks?')) {
+                        setSiteContent(prev => ({ ...prev, contentBlocks: [] }));
+                        addToast('All blocks cleared', 'success');
+                      }
+                    }}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left border-red-500"
+                    style={{ borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🗑️</div>
+                    <h3 className="font-bold text-red-400 mb-2 font-sans">Clear All</h3>
+                    <p className="text-sm text-gray-400 font-sans">Remove all blocks</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Add New Block */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Add Content Block</h2>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => addContentBlock('promo-banner')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎉</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Promo Banner</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('announcement')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">📢</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Announcement</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('special-offer')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎁</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Special Offer</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('featured-products')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">⭐</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Featured Products</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('image')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">📸</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Image Block</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('text')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">📝</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Text Block</h3>
+                  </button>
+                </div>
+              </div>
+
+              {/* Current Blocks */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>
+                  Current Blocks ({siteContent.contentBlocks?.length || 0})
+                </h2>
+
+                {(!siteContent.contentBlocks || siteContent.contentBlocks.length === 0) ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400 mb-4 font-sans">No content blocks yet. Add one above or apply a template!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {siteContent.contentBlocks.map((block, index) => (
+                      <div key={block.id} className="bg-black/40 p-4 rounded-lg border-2" style={{ borderColor: block.visible ? '#D4AF37' : '#666' }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">
+                              {block.type === 'promo-banner' && '🎉'}
+                              {block.type === 'announcement' && '📢'}
+                              {block.type === 'special-offer' && '🎁'}
+                              {block.type === 'featured-products' && '⭐'}
+                              {block.type === 'image' && '📸'}
+                              {block.type === 'text' && '📝'}
+                            </span>
+                            <div>
+                              <h3 className="font-bold text-white font-sans">
+                                {block.type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                              </h3>
+                              <p className="text-xs text-gray-400 font-sans">
+                                {block.type === 'promo-banner' && block.title}
+                                {block.type === 'announcement' && block.text}
+                                {block.type === 'special-offer' && block.title}
+                                {block.type === 'featured-products' && block.title}
+                                {block.type === 'image' && (block.altText || 'Image')}
+                                {block.type === 'text' && block.content?.substring(0, 50)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {/* Move Up */}
+                            {index > 0 && (
+                              <button
+                                onClick={() => moveBlock(index, index - 1)}
+                                className="px-3 py-1 text-sm rounded glass-morphism hover:scale-105 transition-all duration-300"
+                                style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                                title="Move Up"
+                              >
+                                ↑
+                              </button>
+                            )}
+
+                            {/* Move Down */}
+                            {index < siteContent.contentBlocks.length - 1 && (
+                              <button
+                                onClick={() => moveBlock(index, index + 1)}
+                                className="px-3 py-1 text-sm rounded glass-morphism hover:scale-105 transition-all duration-300"
+                                style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                                title="Move Down"
+                              >
+                                ↓
+                              </button>
+                            )}
+
+                            {/* Toggle Visibility */}
+                            <button
+                              onClick={() => toggleBlockVisibility(block.id)}
+                              className="px-3 py-1 text-sm rounded glass-morphism hover:scale-105 transition-all duration-300"
+                              style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                              title={block.visible ? 'Hide' : 'Show'}
+                            >
+                              {block.visible ? '👁️' : '🙈'}
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                              onClick={() => setEditingBlock(block.id)}
+                              className="px-3 py-1 text-sm rounded luxury-gradient text-black hover:scale-105 transition-all duration-300"
+                            >
+                              Edit
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => deleteContentBlock(block.id)}
+                              className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:scale-105 transition-all duration-300"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Edit Form */}
+                        {editingBlock === block.id && (
+                          <div className="mt-4 pt-4 border-t-2" style={{ borderColor: '#D4AF37' }}>
+                            <h4 className="font-bold text-white mb-4 font-sans">Edit Block</h4>
+
+                            {/* Promo Banner Editor */}
+                            {block.type === 'promo-banner' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.subtitle}
+                                  onChange={(e) => updateContentBlock(block.id, { subtitle: e.target.value })}
+                                  placeholder="Subtitle"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                  <select
+                                    value={block.backgroundColor}
+                                    onChange={(e) => updateContentBlock(block.id, { backgroundColor: e.target.value })}
+                                    className="p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  >
+                                    <option value="gold">Gold Background</option>
+                                    <option value="black">Black Background</option>
+                                    <option value="red">Red Background</option>
+                                  </select>
+                                  <select
+                                    value={block.textColor}
+                                    onChange={(e) => updateContentBlock(block.id, { textColor: e.target.value })}
+                                    className="p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  >
+                                    <option value="black">Black Text</option>
+                                    <option value="white">White Text</option>
+                                    <option value="gold">Gold Text</option>
+                                  </select>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={block.buttonText}
+                                  onChange={(e) => updateContentBlock(block.id, { buttonText: e.target.value })}
+                                  placeholder="Button Text"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <label className="flex items-center space-x-2 text-white font-sans">
+                                  <input
+                                    type="checkbox"
+                                    checked={block.showCountdown}
+                                    onChange={(e) => updateContentBlock(block.id, { showCountdown: e.target.checked })}
+                                    style={{ accentColor: '#D4AF37' }}
+                                  />
+                                  <span>Show Countdown Timer</span>
+                                </label>
+                                {block.showCountdown && (
+                                  <input
+                                    type="date"
+                                    value={block.endDate}
+                                    onChange={(e) => updateContentBlock(block.id, { endDate: e.target.value })}
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  />
+                                )}
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Announcement Editor */}
+                            {block.type === 'announcement' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.text}
+                                  onChange={(e) => updateContentBlock(block.id, { text: e.target.value })}
+                                  placeholder="Announcement text"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.icon}
+                                  onChange={(e) => updateContentBlock(block.id, { icon: e.target.value })}
+                                  placeholder="Icon (emoji)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Special Offer Editor */}
+                            {block.type === 'special-offer' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.description}
+                                  onChange={(e) => updateContentBlock(block.id, { description: e.target.value })}
+                                  placeholder="Description"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.code}
+                                  onChange={(e) => updateContentBlock(block.id, { code: e.target.value })}
+                                  placeholder="Discount Code"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.discount}
+                                  onChange={(e) => updateContentBlock(block.id, { discount: e.target.value })}
+                                  placeholder="Discount (e.g., 20% OFF)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Featured Products Editor */}
+                            {block.type === 'featured-products' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Section Title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <select
+                                  value={block.columns}
+                                  onChange={(e) => updateContentBlock(block.id, { columns: parseInt(e.target.value) })}
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                >
+                                  <option value="2">2 Columns</option>
+                                  <option value="3">3 Columns</option>
+                                  <option value="4">4 Columns</option>
+                                </select>
+                                <div>
+                                  <label className="block text-white mb-2 font-sans">Select Products:</label>
+                                  <div className="max-h-48 overflow-y-auto space-y-2 p-2 bg-black/20 rounded-lg">
+                                    {[...products.forHer, ...products.forHim].map(product => (
+                                      <label key={product.id} className="flex items-center space-x-2 text-white font-sans">
+                                        <input
+                                          type="checkbox"
+                                          checked={block.productIds.includes(product.id)}
+                                          onChange={(e) => {
+                                            const newIds = e.target.checked
+                                              ? [...block.productIds, product.id]
+                                              : block.productIds.filter(id => id !== product.id);
+                                            updateContentBlock(block.id, { productIds: newIds });
+                                          }}
+                                          style={{ accentColor: '#D4AF37' }}
+                                        />
+                                        <span className="text-sm">{product.name} ({product.category})</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Image Editor */}
+                            {block.type === 'image' && (
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-white mb-2 font-sans">Image URL:</label>
+                                  <input
+                                    type="text"
+                                    value={block.imageUrl}
+                                    onChange={(e) => updateContentBlock(block.id, { imageUrl: e.target.value })}
+                                    placeholder="https://..."
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  />
+                                </div>
+
+                                {/* Drag & Drop Upload */}
+                                <div
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={async (e) => {
+                                    e.preventDefault();
+                                    const file = e.dataTransfer.files[0];
+                                    if (file && file.type.startsWith('image/')) {
+                                      if (googleDriveConfig.authenticated) {
+                                        addToast('Uploading image to Google Drive...', 'info');
+                                        const url = await uploadImageToGoogleDrive(file);
+                                        if (url) {
+                                          updateContentBlock(block.id, { imageUrl: url });
+                                          addToast('Image uploaded successfully!', 'success');
+                                        }
+                                      } else {
+                                        addToast('Please connect Google Drive first', 'error');
+                                      }
+                                    }
+                                  }}
+                                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-black/20 transition-all"
+                                  style={{ borderColor: '#D4AF37' }}
+                                >
+                                  <p className="text-gray-400 font-sans">Drag & drop image here</p>
+                                  <p className="text-xs text-gray-500 mt-1 font-sans">or paste URL above</p>
+                                </div>
+
+                                {block.imageUrl && (
+                                  <img src={block.imageUrl} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                                )}
+
+                                <input
+                                  type="text"
+                                  value={block.altText}
+                                  onChange={(e) => updateContentBlock(block.id, { altText: e.target.value })}
+                                  placeholder="Alt text (for accessibility)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+
+                                <select
+                                  value={block.height}
+                                  onChange={(e) => updateContentBlock(block.id, { height: e.target.value })}
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                >
+                                  <option value="small">Small Height</option>
+                                  <option value="medium">Medium Height</option>
+                                  <option value="large">Large Height</option>
+                                </select>
+
+                                <input
+                                  type="text"
+                                  value={block.link}
+                                  onChange={(e) => updateContentBlock(block.id, { link: e.target.value })}
+                                  placeholder="Link URL (optional)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Text Editor */}
+                            {block.type === 'text' && (
+                              <div className="space-y-3">
+                                <textarea
+                                  value={block.content}
+                                  onChange={(e) => updateContentBlock(block.id, { content: e.target.value })}
+                                  placeholder="Your text content..."
+                                  rows="4"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={async () => {
+                    addToast('Saving page layout...', 'info');
+                    if (googleDriveConfig.enabled && googleDriveConfig.authenticated) {
+                      await saveContentToGoogleDrive();
+                    } else {
+                      addToast('Page layout saved locally!', 'success');
+                    }
+                  }}
+                  className="luxury-gradient text-black px-8 py-4 rounded-lg hover:scale-105 transition-all duration-300 font-semibold text-lg"
+                >
+                  {googleDriveConfig.authenticated ? '💾 Save to Google Drive' : '💾 Save Layout'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Content Management Tab */}
           {adminTab === 'cms' && (
             <div className="space-y-6">
+              {/* Logo Section */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>Site Logo</h2>
+                  <span className="text-sm text-gray-400 font-sans">Appears in header, hero & footer</span>
+                </div>
+
+                <div className="space-y-4">
+                  {googleDriveConfig.authenticated ? (
+                    <div>
+                      <label className="block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+
+                            addToast('Uploading logo...', 'info');
+                            const url = await uploadImageToGoogleDrive(file);
+                            if (url) {
+                              setSiteContent(prev => ({ ...prev, logo: url }));
+                              addToast('Logo uploaded successfully!', 'success');
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-black/40 transition-all duration-300"
+                          style={{ borderColor: '#D4AF37' }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '';
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault();
+                            e.currentTarget.style.backgroundColor = '';
+
+                            const file = e.dataTransfer.files[0];
+                            if (!file || !file.type.startsWith('image/')) {
+                              addToast('Please drop an image file', 'error');
+                              return;
+                            }
+
+                            addToast('Uploading logo...', 'info');
+                            const url = await uploadImageToGoogleDrive(file);
+                            if (url) {
+                              setSiteContent(prev => ({ ...prev, logo: url }));
+                              addToast('Logo uploaded successfully!', 'success');
+                            }
+                          }}
+                        >
+                          <div className="text-4xl mb-2">🎨</div>
+                          <p className="text-white font-semibold mb-1">Click to upload or drag & drop logo</p>
+                          <p className="text-xs text-gray-400">PNG, JPG, SVG recommended (transparent background works best)</p>
+                        </div>
+                      </label>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block font-medium mb-2 text-white font-sans">Logo URL</label>
+                      <input
+                        type="text"
+                        value={siteContent.logo}
+                        onChange={(e) => setSiteContent(prev => ({ ...prev, logo: e.target.value }))}
+                        className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
+                        style={{ borderColor: '#D4AF37' }}
+                        placeholder="Enter logo URL (or connect Google Drive to upload)"
+                      />
+                    </div>
+                  )}
+
+                  {/* Logo Preview */}
+                  {siteContent.logo && (
+                    <div className="bg-black/40 p-6 rounded-lg border-2" style={{ borderColor: '#D4AF37' }}>
+                      <p className="text-sm text-gray-400 mb-3 font-sans">Preview:</p>
+                      <div className="flex items-center justify-center space-x-8">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 mb-2">Header Size</p>
+                          <img src={siteContent.logo} alt="Logo Preview" className="h-12 w-auto" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 mb-2">Hero Size</p>
+                          <img src={siteContent.logo} alt="Logo Preview" className="h-32 w-auto" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Hero Section */}
               <div className="glass-morphism rounded-xl luxury-shadow p-6">
                 <div className="flex justify-between items-center mb-6">
@@ -2703,7 +3830,7 @@ const App = () => {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <img
-                src="/Final.png"
+                src={siteContent.logo}
                 alt="Perpetual Linger Logo"
                 className="h-10 w-auto"
               />
