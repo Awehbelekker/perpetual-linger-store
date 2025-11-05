@@ -2058,6 +2058,26 @@ const App = () => {
               <button onClick={() => { setCurrentPage('forHim'); setMobileMenuOpen(false); }} className="block w-full text-left py-2 hover:text-gold transition-all duration-300">For Him</button>
               <button onClick={() => { setCurrentPage('about'); setMobileMenuOpen(false); }} className="block w-full text-left py-2 hover:text-gold transition-all duration-300">About</button>
               <button onClick={() => { setCurrentPage('contact'); setMobileMenuOpen(false); }} className="block w-full text-left py-2 hover:text-gold transition-all duration-300">Contact</button>
+
+              {/* Admin Login/Panel for Mobile */}
+              <div className="border-t-2 mt-2 pt-2" style={{ borderColor: '#D4AF37' }}>
+                {isAdmin ? (
+                  <button
+                    onClick={() => { setCurrentPage('admin'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left py-2 px-3 rounded-lg glass-morphism transition-all duration-300"
+                    style={{ color: '#D4AF37', borderColor: '#D4AF37', borderWidth: '1px' }}
+                  >
+                    ⚙️ Admin Panel
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setCurrentPage('adminLogin'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left py-2 hover:text-gold transition-all duration-300 opacity-70 hover:opacity-100"
+                  >
+                    🔒 Admin Login
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
