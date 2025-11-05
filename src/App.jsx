@@ -2432,6 +2432,22 @@ const App = () => {
               Content Management
             </button>
             <button
+              onClick={() => {
+                setAdminTab('imageLibrary');
+                if (googleDriveConfig.authenticated) {
+                  fetchImagesFromGoogleDrive();
+                }
+              }}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'imageLibrary'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'imageLibrary' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              📸 Image Library
+            </button>
+            <button
               onClick={() => setAdminTab('settings')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'settings'
@@ -4020,6 +4036,105 @@ const App = () => {
                 >
                   {googleDriveConfig.authenticated ? '💾 Save to Google Drive' : '💾 Save Changes'}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Image Library Tab */}
+          {adminTab === 'imageLibrary' && (
+            <div className="space-y-6">
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold font-serif" style={{ color: '#D4AF37' }}>📸 Image Library</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={fetchImagesFromGoogleDrive}
+                      disabled={!googleDriveConfig.authenticated || loadingImages}
+                      className="px-4 py-2 rounded-lg glass-morphism text-white hover:scale-105 transition-all font-semibold disabled:opacity-50"
+                      style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                    >
+                      {loadingImages ? '⏳ Loading...' : '🔄 Refresh'}
+                    </button>
+                  </div>
+                </div>
+
+                {!googleDriveConfig.authenticated ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h3 className="text-xl font-bold text-white mb-2">Google Drive Not Connected</h3>
+                    <p className="text-gray-400 mb-6">Connect Google Drive to access your image library</p>
+                    <button
+                      onClick={() => setAdminTab('settings')}
+                      className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all font-semibold"
+                    >
+                      Go to Settings
+                    </button>
+                  </div>
+                ) : loadingImages ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">⏳</div>
+                    <p className="text-white font-semibold">Loading images from Google Drive...</p>
+                  </div>
+                ) : imageLibrary.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">📁</div>
+                    <h3 className="text-xl font-bold text-white mb-2">No Images Yet</h3>
+                    <p className="text-gray-400 mb-6">Upload images from the Product Management or Page Builder tabs</p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-4 flex justify-between items-center">
+                      <p className="text-gray-400 font-sans">
+                        {imageLibrary.length} image{imageLibrary.length !== 1 ? 's' : ''} in library
+                      </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {imageLibrary.map((image) => (
+                        <div
+                          key={image.id}
+                          className="glass-morphism rounded-lg overflow-hidden hover:scale-105 transition-all duration-300"
+                          style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                        >
+                          <div className="relative">
+                            <img
+                              src={image.thumbnail}
+                              alt={image.name}
+                              className="w-full h-48 object-cover"
+                            />
+                            <div className="absolute top-2 right-2">
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Delete "${image.name}"? This cannot be undone.`)) {
+                                    await deleteImageFromGoogleDrive(image.id);
+                                  }
+                                }}
+                                className="bg-red-500/80 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            <p className="text-white font-semibold text-sm truncate mb-1">{image.name}</p>
+                            <p className="text-xs text-gray-400 mb-2">
+                              {new Date(image.createdTime).toLocaleDateString()}
+                            </p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(image.url);
+                                addToast('Image URL copied to clipboard!', 'success');
+                              }}
+                              className="w-full text-xs px-2 py-1 rounded glass-morphism text-white hover:scale-105 transition-all"
+                            >
+                              📋 Copy URL
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
