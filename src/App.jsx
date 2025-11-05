@@ -3306,7 +3306,11 @@ const App = () => {
                         previewMode === 'tablet' ? 'max-w-[768px]' :
                         'max-w-full'
                       }`}>
-                        <div className="bg-black/40 rounded-lg p-4 min-h-[600px] max-h-[800px] overflow-y-auto">
+                        <div
+                          className="bg-black/40 rounded-lg p-4 min-h-[600px] max-h-[800px] overflow-y-auto"
+                          onClick={(e) => e.stopPropagation()}
+                          onScroll={(e) => e.stopPropagation()}
+                        >
                           {siteContent.contentBlocks.length === 0 ? (
                             <div className="text-center py-20">
                               <div className="text-6xl mb-4">📄</div>
@@ -3344,23 +3348,23 @@ const App = () => {
                                     }`}
                                   >
                                   {/* Drag Handle & Controls Overlay */}
-                                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 pointer-events-auto">
                                     <button
-                                      onClick={() => setEditingBlock(block)}
+                                      onClick={(e) => { e.stopPropagation(); setEditingBlock(block); }}
                                       className="bg-black/80 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-gold hover:text-black transition-all duration-300"
                                       title="Edit Block"
                                     >
                                       ✏️ Edit
                                     </button>
                                     <button
-                                      onClick={() => toggleBlockVisibility(block.id)}
+                                      onClick={(e) => { e.stopPropagation(); toggleBlockVisibility(block.id); }}
                                       className="bg-black/80 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-gold hover:text-black transition-all duration-300"
                                       title={block.visible ? 'Hide' : 'Show'}
                                     >
                                       {block.visible ? '👁️' : '🚫'}
                                     </button>
                                     <button
-                                      onClick={() => deleteContentBlock(block.id)}
+                                      onClick={(e) => { e.stopPropagation(); deleteContentBlock(block.id); }}
                                       className="bg-black/80 text-red-400 px-3 py-1 rounded text-xs font-semibold hover:bg-red-500 hover:text-white transition-all duration-300"
                                       title="Delete Block"
                                     >
