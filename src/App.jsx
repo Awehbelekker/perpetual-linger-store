@@ -637,15 +637,36 @@ const App = () => {
     contentBlocks: [] // Dynamic content blocks for homepage
   };
 
-  // Google Drive OAuth 2.0 Configuration
+  // ============================================================================
+  // GOOGLE DRIVE OAUTH 2.0 CONFIGURATION
+  // ============================================================================
+  //
+  // SETUP INSTRUCTIONS:
+  // 1. Go to https://console.cloud.google.com
+  // 2. Create a new project (or select existing)
+  // 3. Enable "Google Drive API" in the API Library
+  // 4. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
+  // 5. Application type: "Web application"
+  // 6. Add Authorized JavaScript origins:
+  //    - http://localhost:5173 (for development)
+  //    - https://perpetuallinger.co.za (for production)
+  // 7. Copy the Client ID and replace the placeholder below
+  // 8. Save and deploy!
+  //
+  // NOTE: The Client ID is safe to include in client-side code.
+  // It's not a secret - it's meant to identify your application.
+  // ============================================================================
+
+  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE.apps.googleusercontent.com';
+
   const [googleDriveConfig, setGoogleDriveConfig] = useState(() => {
     const saved = localStorage.getItem('googleDriveConfig');
     return saved ? JSON.parse(saved) : {
-      clientId: '',
       accessToken: '',
+      refreshToken: '',
+      expiresAt: null,
       fileId: '',
       imagesFolderId: '',
-      enabled: false,
       authenticated: false
     };
   });
@@ -666,7 +687,7 @@ const App = () => {
       setIsLoadingContent(true);
       setContentError(null);
 
-      if (googleDriveConfig.enabled && googleDriveConfig.authenticated && googleDriveConfig.accessToken && googleDriveConfig.fileId) {
+      if (googleDriveConfig.authenticated && googleDriveConfig.accessToken && googleDriveConfig.fileId) {
         try {
           // Load from Google Drive using OAuth token
           const response = await fetch(
@@ -705,7 +726,7 @@ const App = () => {
     };
 
     loadContent();
-  }, [googleDriveConfig.enabled, googleDriveConfig.authenticated, googleDriveConfig.accessToken, googleDriveConfig.fileId]);
+  }, [googleDriveConfig.authenticated, googleDriveConfig.accessToken, googleDriveConfig.fileId]);
 
   // Save content to localStorage whenever it changes (as backup)
   useEffect(() => {
@@ -1283,25 +1304,24 @@ const App = () => {
     }
   };
 
-  // OAuth 2.0 Authentication
+  // Simplified OAuth 2.0 Authentication - One Click!
   const authenticateGoogleDrive = () => {
-    if (!googleDriveConfig.clientId) {
-      addToast('Please enter your Google OAuth Client ID first', 'error');
-      return;
-    }
-
     setIsAuthenticating(true);
 
     try {
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: googleDriveConfig.clientId,
+        client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.file',
         callback: async (response) => {
           if (response.access_token) {
-            // Save access token
+            // Calculate token expiration (typically 1 hour)
+            const expiresAt = Date.now() + (response.expires_in || 3600) * 1000;
+
+            // Save access token and expiration
             setGoogleDriveConfig(prev => ({
               ...prev,
               accessToken: response.access_token,
+              expiresAt: expiresAt,
               authenticated: true
             }));
 
@@ -1311,16 +1331,16 @@ const App = () => {
             // Fetch image library
             await fetchImagesFromGoogleDrive();
 
-            addToast('Successfully connected to Google Drive!', 'success');
+            addToast('✅ Successfully connected to Google Drive!', 'success');
             setIsAuthenticating(false);
           } else {
-            addToast('Authentication failed', 'error');
+            addToast('❌ Authentication failed', 'error');
             setIsAuthenticating(false);
           }
         },
         error_callback: (error) => {
           console.error('OAuth error:', error);
-          addToast('Authentication failed: ' + error.message, 'error');
+          addToast('❌ Authentication cancelled or failed', 'error');
           setIsAuthenticating(false);
         }
       });
@@ -1328,9 +1348,29 @@ const App = () => {
       client.requestAccessToken();
     } catch (error) {
       console.error('Error initializing OAuth:', error);
-      addToast('Failed to initialize Google authentication', 'error');
+      addToast('❌ Failed to initialize Google authentication', 'error');
       setIsAuthenticating(false);
     }
+  };
+
+  // Disconnect from Google Drive
+  const disconnectGoogleDrive = () => {
+    setGoogleDriveConfig({
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: null,
+      fileId: '',
+      imagesFolderId: '',
+      authenticated: false
+    });
+    setImageLibrary([]);
+    addToast('🔌 Disconnected from Google Drive', 'info');
+  };
+
+  // Check if token is expired and needs refresh
+  const isTokenExpired = () => {
+    if (!googleDriveConfig.expiresAt) return true;
+    return Date.now() >= googleDriveConfig.expiresAt;
   };
 
   // Find or create content file in Google Drive
@@ -1440,7 +1480,7 @@ const App = () => {
 
   // Auto-save content to Google Drive
   const saveContentToGoogleDrive = async () => {
-    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken || !googleDriveConfig.fileId) {
+    if (!googleDriveConfig.authenticated || !googleDriveConfig.accessToken || !googleDriveConfig.fileId) {
       addToast('Google Drive not connected. Saving locally only.', 'info');
       return;
     }
@@ -1471,7 +1511,7 @@ const App = () => {
 
   // Upload image to Google Drive
   const uploadImageToGoogleDrive = async (file) => {
-    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+    if (!googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
       addToast('Google Drive not connected', 'error');
       return null;
     }
@@ -1566,7 +1606,7 @@ const App = () => {
 
   // Fetch all images from Google Drive
   const fetchImagesFromGoogleDrive = async () => {
-    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+    if (!googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
       return [];
     }
 
@@ -1614,7 +1654,7 @@ const App = () => {
 
   // Delete image from Google Drive
   const deleteImageFromGoogleDrive = async (imageId) => {
-    if (!googleDriveConfig.enabled || !googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
+    if (!googleDriveConfig.authenticated || !googleDriveConfig.accessToken) {
       addToast('Google Drive not connected', 'error');
       return false;
     }
@@ -3890,7 +3930,7 @@ const App = () => {
                 <button
                   onClick={async () => {
                     addToast('Saving page layout...', 'info');
-                    if (googleDriveConfig.enabled && googleDriveConfig.authenticated) {
+                    if (googleDriveConfig.authenticated) {
                       await saveContentToGoogleDrive();
                     } else {
                       addToast('Page layout saved locally!', 'success');
@@ -4247,7 +4287,7 @@ const App = () => {
                 <button
                   onClick={async () => {
                     addToast('Saving content...', 'info');
-                    if (googleDriveConfig.enabled && googleDriveConfig.authenticated) {
+                    if (googleDriveConfig.authenticated) {
                       await saveContentToGoogleDrive();
                     } else {
                       addToast('Content saved locally!', 'success');
@@ -4599,141 +4639,194 @@ const App = () => {
           {/* Google Drive Settings Tab */}
           {adminTab === 'settings' && (
             <div className="space-y-6">
-              {/* Setup Instructions */}
-              <div className="glass-morphism rounded-xl luxury-shadow p-6">
-                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Google Drive Integration Setup</h2>
-
-                <div className="space-y-4 text-white font-sans">
-                  <p className="text-lg">
-                    Connect your Google Drive to store and sync website content across all devices.
+              {/* Simplified Connection Card */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-8">
+                <div className="text-center mb-8">
+                  <div className="text-6xl mb-4">☁️</div>
+                  <h2 className="text-3xl font-bold mb-3 font-serif" style={{ color: '#D4AF37' }}>
+                    Google Drive Integration
+                  </h2>
+                  <p className="text-lg text-gray-300 font-sans">
+                    Store and sync your website content across all devices
                   </p>
-
-                  <div className="bg-black/40 p-4 rounded-lg space-y-3">
-                    <h3 className="font-bold text-lg" style={{ color: '#D4AF37' }}>Setup Steps:</h3>
-                    <ol className="list-decimal list-inside space-y-2 text-sm">
-                      <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#D4AF37' }}>Google Cloud Console</a></li>
-                      <li>Create a new project or select existing one</li>
-                      <li>Enable the <strong>Google Drive API</strong></li>
-                      <li>Go to "Credentials" → "Create Credentials" → <strong>"OAuth 2.0 Client ID"</strong></li>
-                      <li>Application type: <strong>Web application</strong></li>
-                      <li>Add authorized JavaScript origins: <code className="bg-black/60 px-2 py-1 rounded">https://perpetuallinger.co.za</code></li>
-                      <li>Copy the <strong>Client ID</strong> and paste it below</li>
-                      <li>Enable integration and click <strong>"Connect Google Drive"</strong></li>
-                      <li>Grant permissions when prompted</li>
-                      <li>Done! Content and images will auto-sync</li>
-                    </ol>
-                  </div>
-
-                  {contentError && (
-                    <div className="bg-red-900/30 border-2 border-red-500 p-4 rounded-lg">
-                      <p className="font-bold text-red-400">Error loading from Google Drive:</p>
-                      <p className="text-sm text-red-300">{contentError}</p>
-                    </div>
-                  )}
-
-                  {isLoadingContent && googleDriveConfig.enabled && (
-                    <div className="bg-blue-900/30 border-2 border-blue-500 p-4 rounded-lg">
-                      <p className="text-blue-300">Loading content from Google Drive...</p>
-                    </div>
-                  )}
                 </div>
-              </div>
 
-              {/* Configuration Form */}
-              <div className="glass-morphism rounded-xl luxury-shadow p-6">
-                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>Configuration</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="flex items-center space-x-3 mb-4">
-                      <input
-                        type="checkbox"
-                        checked={googleDriveConfig.enabled}
-                        onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, enabled: e.target.checked }))}
-                        className="w-5 h-5 rounded"
-                        style={{ accentColor: '#D4AF37' }}
-                      />
-                      <span className="text-white font-sans font-semibold">Enable Google Drive Integration</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block font-medium mb-2 text-white font-sans">Google OAuth 2.0 Client ID</label>
-                    <input
-                      type="text"
-                      value={googleDriveConfig.clientId}
-                      onChange={(e) => setGoogleDriveConfig(prev => ({ ...prev, clientId: e.target.value }))}
-                      placeholder="123456789-abc123.apps.googleusercontent.com"
-                      className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
-                      style={{ borderColor: '#D4AF37' }}
-                      disabled={!googleDriveConfig.enabled}
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Your OAuth 2.0 Client ID from Google Cloud Console</p>
-                  </div>
-
-                  {googleDriveConfig.authenticated && (
-                    <div className="bg-green-900/30 border-2 border-green-500 p-4 rounded-lg">
-                      <p className="font-bold text-green-400">✓ Connected to Google Drive</p>
-                      <p className="text-sm text-green-300 mt-1">Content file: {googleDriveConfig.fileId ? 'Found' : 'Creating...'}</p>
-                      <p className="text-sm text-green-300">Images folder: {googleDriveConfig.imagesFolderId ? 'Ready' : 'Creating...'}</p>
+                {/* Connection Status */}
+                {googleDriveConfig.authenticated ? (
+                  <div className="space-y-6">
+                    {/* Connected Status */}
+                    <div className="bg-green-900/30 border-2 border-green-500 rounded-xl p-6">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="text-5xl">✅</div>
+                      </div>
+                      <h3 className="text-2xl font-bold text-green-400 text-center mb-3">Connected to Google Drive</h3>
+                      <div className="space-y-2 text-center">
+                        <p className="text-sm text-green-300">
+                          <strong>Content File:</strong> {googleDriveConfig.fileId ? '✓ Ready' : '⏳ Setting up...'}
+                        </p>
+                        <p className="text-sm text-green-300">
+                          <strong>Images Folder:</strong> {googleDriveConfig.imagesFolderId ? '✓ Ready' : '⏳ Setting up...'}
+                        </p>
+                        {googleDriveConfig.expiresAt && (
+                          <p className="text-xs text-green-200 mt-2">
+                            Token expires: {new Date(googleDriveConfig.expiresAt).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  )}
 
-                  {!googleDriveConfig.authenticated && googleDriveConfig.enabled && googleDriveConfig.clientId && (
+                    {/* Features List */}
+                    <div className="bg-black/40 rounded-xl p-6">
+                      <h4 className="font-bold text-lg mb-4" style={{ color: '#D4AF37' }}>✨ Active Features:</h4>
+                      <ul className="space-y-3 text-white font-sans">
+                        <li className="flex items-start space-x-3">
+                          <span className="text-green-400 text-xl">✓</span>
+                          <div>
+                            <strong>Auto-Sync:</strong>
+                            <p className="text-sm text-gray-400">Content saves to Google Drive automatically</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span className="text-green-400 text-xl">✓</span>
+                          <div>
+                            <strong>Image Uploads:</strong>
+                            <p className="text-sm text-gray-400">Upload images directly from admin panel</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span className="text-green-400 text-xl">✓</span>
+                          <div>
+                            <strong>Image Library:</strong>
+                            <p className="text-sm text-gray-400">Browse and manage all uploaded images</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span className="text-green-400 text-xl">✓</span>
+                          <div>
+                            <strong>Cross-Device Sync:</strong>
+                            <p className="text-sm text-gray-400">Access your content from any device</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button
+                        onClick={async () => {
+                          await saveContentToGoogleDrive();
+                          addToast('Content saved to Google Drive!', 'success');
+                        }}
+                        className="flex-1 luxury-gradient text-black px-6 py-4 rounded-lg hover:scale-105 transition-all duration-300 font-semibold text-lg"
+                      >
+                        💾 Save to Google Drive
+                      </button>
+                      <button
+                        onClick={disconnectGoogleDrive}
+                        className="flex-1 glass-morphism text-white px-6 py-4 rounded-lg hover:scale-105 transition-all duration-300 font-semibold text-lg"
+                        style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                      >
+                        🔌 Disconnect
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Not Connected Status */}
+                    <div className="bg-gray-900/50 border-2 border-gray-600 rounded-xl p-6">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="text-5xl">🔒</div>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-300 text-center mb-3">Not Connected</h3>
+                      <p className="text-sm text-gray-400 text-center">
+                        Click the button below to connect your Google Drive account
+                      </p>
+                    </div>
+
+                    {/* Benefits */}
+                    <div className="bg-black/40 rounded-xl p-6">
+                      <h4 className="font-bold text-lg mb-4" style={{ color: '#D4AF37' }}>🎁 What You'll Get:</h4>
+                      <ul className="space-y-3 text-white font-sans">
+                        <li className="flex items-start space-x-3">
+                          <span style={{ color: '#D4AF37' }}>•</span>
+                          <div>
+                            <strong>Automatic Backups:</strong>
+                            <p className="text-sm text-gray-400">Never lose your content or images</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span style={{ color: '#D4AF37' }}>•</span>
+                          <div>
+                            <strong>Easy Image Management:</strong>
+                            <p className="text-sm text-gray-400">Upload and organize product images effortlessly</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span style={{ color: '#D4AF37' }}>•</span>
+                          <div>
+                            <strong>Multi-Device Access:</strong>
+                            <p className="text-sm text-gray-400">Manage your site from phone, tablet, or computer</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start space-x-3">
+                          <span style={{ color: '#D4AF37' }}>•</span>
+                          <div>
+                            <strong>Instant Sync:</strong>
+                            <p className="text-sm text-gray-400">Changes appear immediately across all devices</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Connect Button */}
                     <button
                       onClick={authenticateGoogleDrive}
                       disabled={isAuthenticating}
-                      className="w-full luxury-gradient text-black px-6 py-4 rounded-lg hover:scale-105 transition-all duration-300 font-semibold text-lg"
+                      className="w-full luxury-gradient text-black px-8 py-6 rounded-xl hover:scale-105 transition-all duration-300 font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isAuthenticating ? 'Connecting...' : '🔗 Connect Google Drive'}
+                      {isAuthenticating ? (
+                        <span className="flex items-center justify-center space-x-3">
+                          <span className="animate-spin">⏳</span>
+                          <span>Connecting...</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center space-x-3">
+                          <span>🔗</span>
+                          <span>Connect Google Drive</span>
+                        </span>
+                      )}
                     </button>
-                  )}
 
-                  <div className="bg-amber-900/20 border-2 border-amber-600 p-4 rounded-lg">
-                    <h4 className="font-bold text-amber-400 mb-2">✨ How it works:</h4>
-                    <ul className="text-sm text-amber-200 space-y-1">
-                      <li>• <strong>Auto-sync:</strong> Content saves to Google Drive automatically</li>
-                      <li>• <strong>Image uploads:</strong> Upload images directly from admin panel</li>
-                      <li>• <strong>Instant updates:</strong> All visitors see changes immediately</li>
-                      <li>• <strong>Centralized:</strong> Manage everything from one place</li>
-                      <li>• <strong>Backup:</strong> localStorage backup for offline access</li>
-                    </ul>
+                    {/* Simple Instructions */}
+                    <div className="bg-blue-900/20 border-2 border-blue-600 rounded-xl p-6">
+                      <h4 className="font-bold text-blue-400 mb-3">📝 How to Connect:</h4>
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-blue-200">
+                        <li>Click the "Connect Google Drive" button above</li>
+                        <li>Sign in with your Google account</li>
+                        <li>Grant permission to access Google Drive</li>
+                        <li>Done! Your content will auto-sync</li>
+                      </ol>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4">
-                {googleDriveConfig.authenticated && (
-                  <button
-                    onClick={() => {
-                      setGoogleDriveConfig(prev => ({
-                        ...prev,
-                        enabled: false,
-                        authenticated: false,
-                        accessToken: '',
-                        fileId: '',
-                        imagesFolderId: ''
-                      }));
-                      addToast('Disconnected from Google Drive', 'info');
-                    }}
-                    className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
-                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
-                  >
-                    Disconnect
-                  </button>
                 )}
-                {googleDriveConfig.authenticated && (
-                  <button
-                    onClick={async () => {
-                      await saveContentToGoogleDrive();
-                      addToast('Testing connection...', 'info');
-                      setTimeout(() => window.location.reload(), 1500);
-                    }}
-                    className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
-                  >
-                    Save & Reload
-                  </button>
+
+                {/* Error Display */}
+                {contentError && (
+                  <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-6 mt-6">
+                    <h4 className="font-bold text-red-400 mb-2">⚠️ Connection Error:</h4>
+                    <p className="text-sm text-red-300">{contentError}</p>
+                    <button
+                      onClick={() => {
+                        setContentError(null);
+                        if (googleDriveConfig.authenticated) {
+                          window.location.reload();
+                        }
+                      }}
+                      className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-semibold text-sm"
+                    >
+                      Retry Connection
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
