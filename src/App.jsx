@@ -404,11 +404,53 @@ const ContentBlockRenderer = ({ block, allProducts }) => {
     return colors[color] || colors.white;
   };
 
+  // Helper functions for styling
+  const getPadding = (size) => {
+    const paddings = {
+      none: 'p-0',
+      small: 'p-4',
+      medium: 'p-8 md:p-12',
+      large: 'p-12 md:p-16'
+    };
+    return paddings[size] || paddings.medium;
+  };
+
+  const getMargin = (size) => {
+    const margins = {
+      none: 'mb-0',
+      small: 'mb-4',
+      medium: 'mb-8',
+      large: 'mb-12'
+    };
+    return margins[size] || margins.medium;
+  };
+
+  const getBorderRadius = (size) => {
+    const radii = {
+      none: 'rounded-none',
+      small: 'rounded-lg',
+      medium: 'rounded-2xl',
+      large: 'rounded-3xl',
+      full: 'rounded-full'
+    };
+    return radii[size] || radii.medium;
+  };
+
+  const getShadow = (size) => {
+    const shadows = {
+      none: '',
+      small: 'shadow-sm',
+      medium: 'luxury-shadow',
+      large: 'shadow-2xl'
+    };
+    return shadows[size] || shadows.medium;
+  };
+
   switch (block.type) {
     case 'promo-banner':
       return (
         <div
-          className="glass-morphism rounded-2xl p-8 md:p-12 text-center luxury-shadow mb-8"
+          className={`glass-morphism text-center ${getPadding(block.padding)} ${getMargin(block.margin)} ${getBorderRadius(block.borderRadius)} ${getShadow(block.shadow)}`}
           style={{ background: getBackgroundColor(block.backgroundColor) }}
         >
           <h2 className="text-4xl md:text-6xl font-bold font-serif mb-4" style={{ color: getTextColor(block.textColor) }}>
@@ -729,6 +771,14 @@ const App = () => {
   };
 
   const getDefaultBlockData = (blockType) => {
+    // Common styling options for all blocks
+    const commonStyles = {
+      padding: 'medium',
+      margin: 'medium',
+      borderRadius: 'medium',
+      shadow: 'medium'
+    };
+
     switch (blockType) {
       case 'promo-banner':
         return {
@@ -739,20 +789,29 @@ const App = () => {
           buttonText: 'Shop Now',
           buttonLink: '#products',
           showCountdown: false,
-          endDate: ''
+          endDate: '',
+          backgroundImage: '',
+          textShadow: false,
+          animation: 'none',
+          ...commonStyles
         };
       case 'featured-products':
         return {
           title: 'Featured Collection',
           productIds: [],
-          columns: 4
+          columns: 4,
+          showPrices: true,
+          layout: 'grid',
+          badgeText: '',
+          ...commonStyles
         };
       case 'announcement':
         return {
           text: 'Important announcement goes here',
           backgroundColor: 'black',
           textColor: 'gold',
-          icon: '📢'
+          icon: '📢',
+          ...commonStyles
         };
       case 'special-offer':
         return {
@@ -761,23 +820,35 @@ const App = () => {
           code: 'SAVE20',
           discount: '20% OFF',
           backgroundColor: 'gold',
-          textColor: 'black'
+          textColor: 'black',
+          ...commonStyles
         };
       case 'image':
         return {
           imageUrl: '',
           altText: '',
           link: '',
-          height: 'medium'
+          height: 'medium',
+          overlayText: '',
+          overlayPosition: 'center',
+          gradientOverlay: 'none',
+          parallax: false,
+          ...commonStyles
         };
       case 'text':
         return {
           content: 'Your custom text here...',
           alignment: 'center',
-          fontSize: 'medium'
+          fontSize: 'medium',
+          backgroundColor: 'transparent',
+          textColor: 'white',
+          borderColor: 'transparent',
+          borderWidth: '0',
+          iconEmoji: '',
+          ...commonStyles
         };
       default:
-        return {};
+        return { ...commonStyles };
     }
   };
 
@@ -3471,6 +3542,75 @@ const App = () => {
                                     style={{ borderColor: '#D4AF37' }}
                                   />
                                 )}
+
+                                {/* Style Options */}
+                                <div className="border-t-2 pt-3 mt-3" style={{ borderColor: '#D4AF37' }}>
+                                  <h5 className="text-white font-semibold mb-3 text-sm">🎨 Style Options</h5>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-white text-xs mb-1">Padding</label>
+                                      <select
+                                        value={block.padding || 'medium'}
+                                        onChange={(e) => updateContentBlock(block.id, { padding: e.target.value })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full p-2 border-2 rounded-lg bg-black/30 text-white text-sm"
+                                        style={{ borderColor: '#D4AF37' }}
+                                      >
+                                        <option value="none">None</option>
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-white text-xs mb-1">Margin</label>
+                                      <select
+                                        value={block.margin || 'medium'}
+                                        onChange={(e) => updateContentBlock(block.id, { margin: e.target.value })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full p-2 border-2 rounded-lg bg-black/30 text-white text-sm"
+                                        style={{ borderColor: '#D4AF37' }}
+                                      >
+                                        <option value="none">None</option>
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-white text-xs mb-1">Border Radius</label>
+                                      <select
+                                        value={block.borderRadius || 'medium'}
+                                        onChange={(e) => updateContentBlock(block.id, { borderRadius: e.target.value })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full p-2 border-2 rounded-lg bg-black/30 text-white text-sm"
+                                        style={{ borderColor: '#D4AF37' }}
+                                      >
+                                        <option value="none">None</option>
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                        <option value="full">Full</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-white text-xs mb-1">Shadow</label>
+                                      <select
+                                        value={block.shadow || 'medium'}
+                                        onChange={(e) => updateContentBlock(block.id, { shadow: e.target.value })}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full p-2 border-2 rounded-lg bg-black/30 text-white text-sm"
+                                        style={{ borderColor: '#D4AF37' }}
+                                      >
+                                        <option value="none">None</option>
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large">Large</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+
                                 <button
                                   onClick={() => setEditingBlock(null)}
                                   className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
