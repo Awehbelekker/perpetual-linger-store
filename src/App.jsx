@@ -4,20 +4,36 @@ import { ToastContainer } from './components/Toast';
 import { ProductCardSkeleton } from './components/SkeletonLoader';
 
 // Global Floating Particles - Always Visible, Never Fading
-const GlobalFloatingParticles = () => {
+const GlobalFloatingParticles = ({ settings }) => {
+  if (!settings.enabled) return null;
+
   // Reduce particle count on mobile for better performance
   const isMobile = window.innerWidth < 768;
-  const particleCount = isMobile ? 30 : 60;
+  const baseCount = isMobile ? 30 : 60;
+  const particleCount = Math.floor(baseCount * (settings.count / 50));
 
   const particles = Array.from({ length: particleCount }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
     size: Math.random() * 8 + 4, // Larger particles (4-12px)
-    duration: Math.random() * 30 + 20,
+    duration: (Math.random() * 30 + 20) / settings.speed,
     delay: Math.random() * 10,
-    opacity: Math.random() * 0.5 + 0.4, // 0.4-0.9 opacity - MUCH more visible
+    opacity: (Math.random() * 0.5 + 0.4) * (settings.brightness / 100),
   }));
+
+  // Convert hex color to RGB
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 212, g: 175, b: 55 };
+  };
+
+  const rgb = hexToRgb(settings.color);
+  const intensityMultiplier = settings.intensity / 50;
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-40">
@@ -30,11 +46,11 @@ const GlobalFloatingParticles = () => {
             top: `${particle.y}%`,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
-            background: 'radial-gradient(circle, rgba(212, 175, 55, 1) 0%, rgba(212, 175, 55, 0.6) 40%, transparent 100%)',
+            background: `radial-gradient(circle, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${intensityMultiplier}) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.6 * intensityMultiplier}) 40%, transparent 100%)`,
             opacity: particle.opacity,
             animationDuration: `${particle.duration}s`,
             animationDelay: `${particle.delay}s`,
-            boxShadow: '0 0 20px rgba(212, 175, 55, 0.8), 0 0 40px rgba(212, 175, 55, 0.4)',
+            boxShadow: `0 0 20px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.8 * intensityMultiplier}), 0 0 40px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.4 * intensityMultiplier})`,
             filter: 'blur(0.5px)',
           }}
         />
@@ -44,19 +60,35 @@ const GlobalFloatingParticles = () => {
 };
 
 // Global Sparkles - Bright and Visible
-const GlobalSparkles = () => {
+const GlobalSparkles = ({ settings }) => {
+  if (!settings.enabled) return null;
+
   // Reduce sparkle count on mobile for better performance
   const isMobile = window.innerWidth < 768;
-  const sparkleCount = isMobile ? 12 : 25;
+  const baseCount = isMobile ? 12 : 25;
+  const sparkleCount = Math.floor(baseCount * (settings.count / 50));
 
   const sparkles = Array.from({ length: sparkleCount }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
     delay: Math.random() * 5,
-    duration: Math.random() * 4 + 3,
+    duration: (Math.random() * 4 + 3) / settings.speed,
     size: Math.random() * 4 + 3,
   }));
+
+  // Convert hex color to RGB
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 212, g: 175, b: 55 };
+  };
+
+  const rgb = hexToRgb(settings.color);
+  const intensityMultiplier = settings.intensity / 50;
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-40">
@@ -69,10 +101,10 @@ const GlobalSparkles = () => {
             top: `${sparkle.y}%`,
             width: `${sparkle.size}px`,
             height: `${sparkle.size}px`,
-            background: 'radial-gradient(circle, rgba(212, 175, 55, 1) 0%, rgba(212, 175, 55, 0.5) 50%, transparent 100%)',
+            background: `radial-gradient(circle, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${intensityMultiplier}) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.5 * intensityMultiplier}) 50%, transparent 100%)`,
             animationDelay: `${sparkle.delay}s`,
             animationDuration: `${sparkle.duration}s`,
-            boxShadow: '0 0 15px rgba(212, 175, 55, 0.9)',
+            boxShadow: `0 0 15px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.9 * intensityMultiplier * (settings.brightness / 100)})`,
           }}
         />
       ))}
@@ -660,6 +692,24 @@ const App = () => {
   // Image Library Management
   const [imageLibrary, setImageLibrary] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+
+  // Visual Effects Settings
+  const [particleEffects, setParticleEffects] = useState(() => {
+    const saved = localStorage.getItem('particleEffects');
+    return saved ? JSON.parse(saved) : {
+      enabled: true,
+      speed: 1,
+      intensity: 50,
+      color: '#D4AF37', // gold
+      count: 50,
+      brightness: 80
+    };
+  });
+
+  // Save particle effects to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('particleEffects', JSON.stringify(particleEffects));
+  }, [particleEffects]);
 
   const addContentBlock = (blockType) => {
     const newBlock = {
@@ -2448,6 +2498,17 @@ const App = () => {
               📸 Image Library
             </button>
             <button
+              onClick={() => setAdminTab('themeSettings')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'themeSettings'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'themeSettings' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              ✨ Theme Settings
+            </button>
+            <button
               onClick={() => setAdminTab('settings')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'settings'
@@ -4139,6 +4200,180 @@ const App = () => {
             </div>
           )}
 
+          {/* Theme Settings Tab */}
+          {adminTab === 'themeSettings' && (
+            <div className="space-y-6">
+              <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                <h2 className="text-2xl font-bold mb-6 font-serif" style={{ color: '#D4AF37' }}>✨ Visual Effects Control Panel</h2>
+
+                <div className="space-y-6">
+                  {/* Enable/Disable Toggle */}
+                  <div className="flex items-center justify-between p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <div>
+                      <h3 className="text-white font-semibold text-lg mb-1">Particle Effects</h3>
+                      <p className="text-gray-400 text-sm">Enable or disable floating particles and sparkles</p>
+                    </div>
+                    <button
+                      onClick={() => setParticleEffects(prev => ({ ...prev, enabled: !prev.enabled }))}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                        particleEffects.enabled
+                          ? 'luxury-gradient text-black'
+                          : 'bg-gray-600 text-white'
+                      }`}
+                    >
+                      {particleEffects.enabled ? '✅ Enabled' : '❌ Disabled'}
+                    </button>
+                  </div>
+
+                  {/* Speed Control */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <label className="block text-white font-semibold mb-3">
+                      Animation Speed: {particleEffects.speed.toFixed(1)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="3"
+                      step="0.1"
+                      value={particleEffects.speed}
+                      onChange={(e) => setParticleEffects(prev => ({ ...prev, speed: parseFloat(e.target.value) }))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${((particleEffects.speed - 0.1) / 2.9) * 100}%, #374151 ${((particleEffects.speed - 0.1) / 2.9) * 100}%, #374151 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Slow (0.1x)</span>
+                      <span>Fast (3x)</span>
+                    </div>
+                  </div>
+
+                  {/* Intensity Control */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <label className="block text-white font-semibold mb-3">
+                      Particle Intensity: {particleEffects.intensity}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={particleEffects.intensity}
+                      onChange={(e) => setParticleEffects(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${particleEffects.intensity}%, #374151 ${particleEffects.intensity}%, #374151 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Subtle (0%)</span>
+                      <span>Intense (100%)</span>
+                    </div>
+                  </div>
+
+                  {/* Brightness Control */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <label className="block text-white font-semibold mb-3">
+                      Brightness: {particleEffects.brightness}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={particleEffects.brightness}
+                      onChange={(e) => setParticleEffects(prev => ({ ...prev, brightness: parseInt(e.target.value) }))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${particleEffects.brightness}%, #374151 ${particleEffects.brightness}%, #374151 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Dim (0%)</span>
+                      <span>Bright (100%)</span>
+                    </div>
+                  </div>
+
+                  {/* Particle Count Control */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <label className="block text-white font-semibold mb-3">
+                      Particle Count: {particleEffects.count}
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={particleEffects.count}
+                      onChange={(e) => setParticleEffects(prev => ({ ...prev, count: parseInt(e.target.value) }))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${((particleEffects.count - 10) / 90) * 100}%, #374151 ${((particleEffects.count - 10) / 90) * 100}%, #374151 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Few (10)</span>
+                      <span>Many (100)</span>
+                    </div>
+                  </div>
+
+                  {/* Color Picker */}
+                  <div className="p-4 glass-morphism rounded-lg" style={{ borderColor: '#D4AF37', borderWidth: '2px' }}>
+                    <label className="block text-white font-semibold mb-3">Particle Color</label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { name: 'Gold', color: '#D4AF37' },
+                        { name: 'Silver', color: '#C0C0C0' },
+                        { name: 'White', color: '#FFFFFF' },
+                        { name: 'Rose Gold', color: '#B76E79' },
+                        { name: 'Blue', color: '#4A90E2' },
+                        { name: 'Purple', color: '#9B59B6' },
+                        { name: 'Green', color: '#2ECC71' },
+                        { name: 'Red', color: '#E74C3C' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.color}
+                          onClick={() => setParticleEffects(prev => ({ ...prev, color: preset.color }))}
+                          className={`p-3 rounded-lg transition-all duration-300 ${
+                            particleEffects.color === preset.color
+                              ? 'ring-4 ring-white scale-105'
+                              : 'hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: preset.color }}
+                        >
+                          <span className={`font-semibold ${preset.color === '#FFFFFF' ? 'text-black' : 'text-white'}`}>
+                            {preset.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reset Button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => {
+                        setParticleEffects({
+                          enabled: true,
+                          speed: 1,
+                          intensity: 50,
+                          color: '#D4AF37',
+                          count: 50,
+                          brightness: 80
+                        });
+                        addToast('Theme settings reset to defaults!', 'success');
+                      }}
+                      className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
+                      style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                    >
+                      Reset to Defaults
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Google Drive Settings Tab */}
           {adminTab === 'settings' && (
             <div className="space-y-6">
@@ -4835,8 +5070,8 @@ const App = () => {
   return (
     <div className="min-h-screen bg-black">
       {/* Global Particles and Sparkles - Always Visible */}
-      <GlobalFloatingParticles />
-      <GlobalSparkles />
+      <GlobalFloatingParticles settings={particleEffects} />
+      <GlobalSparkles settings={particleEffects} />
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
