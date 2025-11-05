@@ -3061,109 +3061,120 @@ const App = () => {
 
           {/* Page Builder Tab */}
           {adminTab === 'pageBuilder' && (
-            <div className="space-y-6">
-              {/* Action Buttons Bar */}
-              <div className="glass-morphism rounded-xl luxury-shadow p-4">
-                <div className="flex justify-between items-center flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    {hasUnsavedChanges && (
-                      <span className="text-yellow-400 text-sm font-semibold animate-pulse">
-                        ⚠️ Unsaved Changes
-                      </span>
+            <div className="space-y-6 animate-fadeIn">
+              {/* Action Buttons Bar - Enhanced */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-5 border border-gold/20">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    {hasUnsavedChanges ? (
+                      <div className="flex items-center gap-2 bg-yellow-500/20 px-4 py-2 rounded-lg border border-yellow-500/40 animate-pulse">
+                        <span className="text-yellow-400 text-lg">⚠️</span>
+                        <span className="text-yellow-300 text-sm font-bold font-sans">Unsaved Changes</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-lg border border-green-500/40">
+                        <span className="text-green-400 text-lg">✓</span>
+                        <span className="text-green-300 text-sm font-bold font-sans">All Changes Saved</span>
+                      </div>
                     )}
+                    <div className="text-gray-400 text-sm font-sans">
+                      {siteContent.contentBlocks.length} {siteContent.contentBlocks.length === 1 ? 'block' : 'blocks'}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {editingBlock && (
                       <button
                         onClick={cancelBlockEditing}
-                        className="px-4 py-2 rounded-lg font-semibold glass-morphism text-white hover:scale-105 transition-all duration-300"
+                        className="px-5 py-2.5 rounded-lg font-bold glass-morphism text-white hover:scale-105 hover:shadow-lg transition-all duration-300 font-sans"
                         style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
                       >
-                        ✖️ Cancel Editing
+                        <span className="mr-1">✖️</span> Cancel
                       </button>
                     )}
                     {hasUnsavedChanges && (
                       <button
                         onClick={discardChanges}
-                        className="px-4 py-2 rounded-lg font-semibold glass-morphism text-red-400 hover:scale-105 transition-all duration-300"
+                        className="px-5 py-2.5 rounded-lg font-bold glass-morphism text-red-400 hover:scale-105 hover:shadow-lg transition-all duration-300 font-sans"
                         style={{ borderColor: '#ff4444', borderWidth: '2px' }}
                       >
-                        ↩️ Discard Changes
+                        <span className="mr-1">↩️</span> Discard
                       </button>
                     )}
                     <button
                       onClick={() => {
                         localStorage.setItem('siteContent', JSON.stringify(siteContent));
                         setHasUnsavedChanges(false);
-                        addToast('💾 Changes saved locally!', 'success');
+                        addToast('💾 Changes saved successfully!', 'success');
                       }}
-                      className="px-4 py-2 rounded-lg font-semibold luxury-gradient text-black hover:scale-105 transition-all duration-300"
+                      className="px-5 py-2.5 rounded-lg font-bold luxury-gradient text-black hover:scale-105 hover:shadow-xl transition-all duration-300 font-sans"
                     >
-                      💾 Save Changes
+                      <span className="mr-1">💾</span> Save Changes
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="flex justify-between items-center">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPageBuilderView('visual')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                      pageBuilderView === 'visual'
-                        ? 'luxury-gradient text-black'
-                        : 'glass-morphism text-white hover:scale-105'
-                    }`}
-                    style={pageBuilderView !== 'visual' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
-                  >
-                    🎨 Visual Builder
-                  </button>
-                  <button
-                    onClick={() => setPageBuilderView('list')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                      pageBuilderView === 'list'
-                        ? 'luxury-gradient text-black'
-                        : 'glass-morphism text-white hover:scale-105'
-                    }`}
-                    style={pageBuilderView !== 'list' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
-                  >
-                    📋 List View
-                  </button>
-                </div>
-
-                {/* Responsive Preview Toggle (Visual Mode Only) */}
-                {pageBuilderView === 'visual' && (
+              {/* View Mode Toggle - Enhanced */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-4 border border-gold/20">
+                <div className="flex justify-between items-center flex-wrap gap-4">
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setPreviewMode('desktop')}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                        previewMode === 'desktop' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      onClick={() => setPageBuilderView('visual')}
+                      className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 font-sans ${
+                        pageBuilderView === 'visual'
+                          ? 'luxury-gradient text-black shadow-lg scale-105'
+                          : 'glass-morphism text-white hover:scale-105 hover:shadow-md'
                       }`}
-                      title="Desktop Preview"
+                      style={pageBuilderView !== 'visual' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
                     >
-                      🖥️ Desktop
+                      <span className="mr-2">🎨</span> Visual Builder
                     </button>
                     <button
-                      onClick={() => setPreviewMode('tablet')}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                        previewMode === 'tablet' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      onClick={() => setPageBuilderView('list')}
+                      className={`px-5 py-2.5 rounded-lg font-bold transition-all duration-300 font-sans ${
+                        pageBuilderView === 'list'
+                          ? 'luxury-gradient text-black shadow-lg scale-105'
+                          : 'glass-morphism text-white hover:scale-105 hover:shadow-md'
                       }`}
-                      title="Tablet Preview"
+                      style={pageBuilderView !== 'list' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
                     >
-                      📱 Tablet
+                      <span className="mr-2">📋</span> List View
+                    </button>
+                  </div>
+
+                  {/* Responsive Preview Toggle (Visual Mode Only) - Enhanced */}
+                  {pageBuilderView === 'visual' && (
+                    <div className="flex gap-2 bg-black/40 p-1 rounded-lg">
+                      <button
+                        onClick={() => setPreviewMode('desktop')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 font-sans ${
+                          previewMode === 'desktop' ? 'luxury-gradient text-black shadow-md' : 'text-gray-400 hover:text-white'
+                        }`}
+                        title="Desktop Preview (1920px)"
+                      >
+                        <span className="text-lg mr-1">🖥️</span> Desktop
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('tablet')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 font-sans ${
+                          previewMode === 'tablet' ? 'luxury-gradient text-black shadow-md' : 'text-gray-400 hover:text-white'
+                      }`}
+                      title="Tablet Preview (768px)"
+                    >
+                      <span className="text-lg mr-1">📱</span> Tablet
                     </button>
                     <button
                       onClick={() => setPreviewMode('mobile')}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                        previewMode === 'mobile' ? 'luxury-gradient text-black' : 'glass-morphism text-white'
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 font-sans ${
+                        previewMode === 'mobile' ? 'luxury-gradient text-black shadow-md' : 'text-gray-400 hover:text-white'
                       }`}
-                      title="Mobile Preview"
+                      title="Mobile Preview (375px)"
                     >
-                      📱 Mobile
+                      <span className="text-lg mr-1">📱</span> Mobile
                     </button>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Visual Builder Mode - Split Screen */}
@@ -3223,70 +3234,75 @@ const App = () => {
                       </div>
                     </div>
 
-                    {/* Block Library Section */}
-                    <div className="glass-morphism rounded-xl luxury-shadow p-4">
-                      <h3 className="text-lg font-bold mb-3 font-serif" style={{ color: '#D4AF37' }}>📦 Add Blocks</h3>
-                      <p className="text-xs text-gray-400 mb-3 font-sans">Click to add at the end, or hover to see insertion preview</p>
-                      <div className="grid grid-cols-2 gap-2">
+                    {/* Block Library Section - Enhanced */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-5 border border-gold/20">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-2xl">📦</span>
+                        <h3 className="text-xl font-bold font-serif" style={{ color: '#D4AF37' }}>Content Blocks</h3>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-4 font-sans bg-black/30 p-3 rounded-lg border border-gold/10">
+                        💡 <strong>Tip:</strong> Click to add, or hover to preview insertion position
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
                         <button
                           onClick={() => addContentBlock('promo-banner')}
                           onMouseEnter={() => showInsertionPreview('promo-banner', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">🎉</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Promo</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🎉</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Promo Banner</h4>
+                          <p className="text-xs text-gray-400 mt-1">Hero promotions</p>
                         </button>
                         <button
                           onClick={() => addContentBlock('announcement')}
                           onMouseEnter={() => showInsertionPreview('announcement', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">📢</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Announce</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">📢</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Announcement</h4>
+                          <p className="text-xs text-gray-400 mt-1">Important notices</p>
                         </button>
                         <button
                           onClick={() => addContentBlock('special-offer')}
                           onMouseEnter={() => showInsertionPreview('special-offer', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">💎</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Offer</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">💎</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Special Offer</h4>
+                          <p className="text-xs text-gray-400 mt-1">Discount codes</p>
                         </button>
                         <button
                           onClick={() => addContentBlock('featured-products')}
                           onMouseEnter={() => showInsertionPreview('featured-products', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">⭐</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Products</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">⭐</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Featured Products</h4>
+                          <p className="text-xs text-gray-400 mt-1">Product showcase</p>
                         </button>
                         <button
                           onClick={() => addContentBlock('image')}
                           onMouseEnter={() => showInsertionPreview('image', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">🖼️</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Image</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🖼️</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Image Block</h4>
+                          <p className="text-xs text-gray-400 mt-1">Custom images</p>
                         </button>
                         <button
                           onClick={() => addContentBlock('text')}
                           onMouseEnter={() => showInsertionPreview('text', siteContent.contentBlocks.length)}
                           onMouseLeave={() => setInsertionPosition(null)}
-                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
-                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
                         >
-                          <div className="text-2xl mb-1">📝</div>
-                          <h4 className="font-bold text-white text-xs font-sans">Text</h4>
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">📝</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Text Block</h4>
+                          <p className="text-xs text-gray-400 mt-1">Custom content</p>
                         </button>
                       </div>
                     </div>
