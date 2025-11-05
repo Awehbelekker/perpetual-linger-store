@@ -751,6 +751,9 @@ const App = () => {
   const [pageBuilderView, setPageBuilderView] = useState('visual'); // 'visual' or 'list'
   const [previewMode, setPreviewMode] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [insertionPosition, setInsertionPosition] = useState(null); // Track where new block will be inserted
+  const [pendingBlockType, setPendingBlockType] = useState(null); // Track block type being added
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
 
   // Image Library Management
   const [imageLibrary, setImageLibrary] = useState([]);
@@ -774,7 +777,7 @@ const App = () => {
     localStorage.setItem('particleEffects', JSON.stringify(particleEffects));
   }, [particleEffects]);
 
-  const addContentBlock = (blockType) => {
+  const addContentBlock = (blockType, position = null) => {
     const newBlock = {
       id: Date.now(),
       type: blockType,
@@ -782,13 +785,30 @@ const App = () => {
       ...getDefaultBlockData(blockType)
     };
 
-    setSiteContent(prev => ({
-      ...prev,
-      contentBlocks: [...prev.contentBlocks, newBlock]
-    }));
+    setSiteContent(prev => {
+      const blocks = [...prev.contentBlocks];
+
+      // Insert at specific position or at the end
+      if (position !== null && position >= 0 && position <= blocks.length) {
+        blocks.splice(position, 0, newBlock);
+      } else {
+        blocks.push(newBlock);
+      }
+
+      return {
+        ...prev,
+        contentBlocks: blocks
+      };
+    });
 
     setEditingBlock(newBlock.id);
-    addToast('Block added! Click edit to customize.', 'success');
+    setInsertionPosition(null); // Clear insertion position
+    setPendingBlockType(null); // Clear pending block type
+    setHasUnsavedChanges(true); // Mark as having unsaved changes
+    addToast('✅ Block added! Click edit to customize.', 'success');
+
+    // Prevent automatic scroll to home page by NOT changing currentPage
+    // The block will be visible in the Page Builder preview
   };
 
   const getDefaultBlockData = (blockType) => {
@@ -880,6 +900,7 @@ const App = () => {
         block.id === blockId ? { ...block, ...updates } : block
       )
     }));
+    setHasUnsavedChanges(true);
   };
 
   const deleteContentBlock = (blockId) => {
@@ -888,7 +909,36 @@ const App = () => {
         ...prev,
         contentBlocks: prev.contentBlocks.filter(block => block.id !== blockId)
       }));
-      addToast('Block deleted', 'success');
+      setHasUnsavedChanges(true);
+      addToast('🗑️ Block deleted', 'success');
+    }
+  };
+
+  // Show insertion position preview
+  const showInsertionPreview = (blockType, position) => {
+    setPendingBlockType(blockType);
+    setInsertionPosition(position);
+  };
+
+  // Cancel block editing
+  const cancelBlockEditing = () => {
+    setEditingBlock(null);
+    setInsertionPosition(null);
+    setPendingBlockType(null);
+    addToast('✖️ Editing cancelled', 'info');
+  };
+
+  // Discard all unsaved changes
+  const discardChanges = () => {
+    if (window.confirm('⚠️ Discard all unsaved changes? This cannot be undone.')) {
+      // Reload content from localStorage or Google Drive
+      const saved = localStorage.getItem('siteContent');
+      if (saved) {
+        setSiteContent(JSON.parse(saved));
+      }
+      setHasUnsavedChanges(false);
+      setEditingBlock(null);
+      addToast('↩️ Changes discarded', 'info');
     }
   };
 
@@ -899,6 +949,7 @@ const App = () => {
         block.id === blockId ? { ...block, visible: !block.visible } : block
       )
     }));
+    setHasUnsavedChanges(true);
   };
 
   const moveBlock = (fromIndex, toIndex) => {
@@ -2996,6 +3047,49 @@ const App = () => {
           {/* Page Builder Tab */}
           {adminTab === 'pageBuilder' && (
             <div className="space-y-6">
+              {/* Action Buttons Bar */}
+              <div className="glass-morphism rounded-xl luxury-shadow p-4">
+                <div className="flex justify-between items-center flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    {hasUnsavedChanges && (
+                      <span className="text-yellow-400 text-sm font-semibold animate-pulse">
+                        ⚠️ Unsaved Changes
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {editingBlock && (
+                      <button
+                        onClick={cancelBlockEditing}
+                        className="px-4 py-2 rounded-lg font-semibold glass-morphism text-white hover:scale-105 transition-all duration-300"
+                        style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                      >
+                        ✖️ Cancel Editing
+                      </button>
+                    )}
+                    {hasUnsavedChanges && (
+                      <button
+                        onClick={discardChanges}
+                        className="px-4 py-2 rounded-lg font-semibold glass-morphism text-red-400 hover:scale-105 transition-all duration-300"
+                        style={{ borderColor: '#ff4444', borderWidth: '2px' }}
+                      >
+                        ↩️ Discard Changes
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('siteContent', JSON.stringify(siteContent));
+                        setHasUnsavedChanges(false);
+                        addToast('💾 Changes saved locally!', 'success');
+                      }}
+                      className="px-4 py-2 rounded-lg font-semibold luxury-gradient text-black hover:scale-105 transition-all duration-300"
+                    >
+                      💾 Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* View Mode Toggle */}
               <div className="flex justify-between items-center">
                 <div className="flex gap-2">
@@ -3117,28 +3211,65 @@ const App = () => {
                     {/* Block Library Section */}
                     <div className="glass-morphism rounded-xl luxury-shadow p-4">
                       <h3 className="text-lg font-bold mb-3 font-serif" style={{ color: '#D4AF37' }}>📦 Add Blocks</h3>
+                      <p className="text-xs text-gray-400 mb-3 font-sans">Click to add at the end, or hover to see insertion preview</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <button onClick={() => addContentBlock('promo-banner')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('promo-banner')}
+                          onMouseEnter={() => showInsertionPreview('promo-banner', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">🎉</div>
                           <h4 className="font-bold text-white text-xs font-sans">Promo</h4>
                         </button>
-                        <button onClick={() => addContentBlock('announcement')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('announcement')}
+                          onMouseEnter={() => showInsertionPreview('announcement', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">📢</div>
                           <h4 className="font-bold text-white text-xs font-sans">Announce</h4>
                         </button>
-                        <button onClick={() => addContentBlock('special-offer')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('special-offer')}
+                          onMouseEnter={() => showInsertionPreview('special-offer', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">💎</div>
                           <h4 className="font-bold text-white text-xs font-sans">Offer</h4>
                         </button>
-                        <button onClick={() => addContentBlock('featured-products')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('featured-products')}
+                          onMouseEnter={() => showInsertionPreview('featured-products', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">⭐</div>
                           <h4 className="font-bold text-white text-xs font-sans">Products</h4>
                         </button>
-                        <button onClick={() => addContentBlock('image')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('image')}
+                          onMouseEnter={() => showInsertionPreview('image', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">🖼️</div>
                           <h4 className="font-bold text-white text-xs font-sans">Image</h4>
                         </button>
-                        <button onClick={() => addContentBlock('text')} className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center" style={{ borderColor: '#D4AF37', borderWidth: '1px' }}>
+                        <button
+                          onClick={() => addContentBlock('text')}
+                          onMouseEnter={() => showInsertionPreview('text', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-3 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                          style={{ borderColor: '#D4AF37', borderWidth: '1px' }}
+                        >
                           <div className="text-2xl mb-1">📝</div>
                           <h4 className="font-bold text-white text-xs font-sans">Text</h4>
                         </button>
@@ -3169,20 +3300,34 @@ const App = () => {
                           ) : (
                             <div className="space-y-4">
                               {siteContent.contentBlocks.map((block, index) => (
-                                <div
-                                  key={block.id}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, index)}
-                                  onDragOver={(e) => handleDragOver(e, index)}
-                                  onDragLeave={handleDragLeave}
-                                  onDrop={(e) => handleDrop(e, index)}
-                                  onDragEnd={handleDragEnd}
-                                  className={`relative group cursor-move transition-all duration-200 ${
-                                    draggedBlockIndex === index ? 'opacity-50' : ''
-                                  } ${
-                                    dragOverIndex === index ? 'border-t-4 border-gold' : ''
-                                  }`}
-                                >
+                                <React.Fragment key={block.id}>
+                                  {/* Insertion Position Indicator - Before Block */}
+                                  {insertionPosition === index && (
+                                    <div className="relative py-4 animate-pulse">
+                                      <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t-4 border-dashed" style={{ borderColor: '#D4AF37' }}></div>
+                                      </div>
+                                      <div className="relative flex justify-center">
+                                        <span className="px-4 py-2 text-sm font-bold rounded-lg luxury-gradient text-black">
+                                          ⬇️ New block will be inserted here
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, index)}
+                                    onDragOver={(e) => handleDragOver(e, index)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, index)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`relative group cursor-move transition-all duration-200 ${
+                                      draggedBlockIndex === index ? 'opacity-50' : ''
+                                    } ${
+                                      dragOverIndex === index ? 'border-t-4 border-gold' : ''
+                                    }`}
+                                  >
                                   {/* Drag Handle & Controls Overlay */}
                                   <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
                                     <button
@@ -3216,7 +3361,22 @@ const App = () => {
                                   {/* Drag Indicator */}
                                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                                 </div>
+                                </React.Fragment>
                               ))}
+
+                              {/* Insertion Position Indicator - At End */}
+                              {insertionPosition === siteContent.contentBlocks.length && (
+                                <div className="relative py-4 animate-pulse">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t-4 border-dashed" style={{ borderColor: '#D4AF37' }}></div>
+                                  </div>
+                                  <div className="relative flex justify-center">
+                                    <span className="px-4 py-2 text-sm font-bold rounded-lg luxury-gradient text-black">
+                                      ⬇️ New block will be added at the end
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
