@@ -2043,6 +2043,62 @@ const App = () => {
     return wishlist.some(item => item.id === productId);
   };
 
+  // Search and Filter functions
+  const filterAndSortProducts = (productList) => {
+    let filtered = [...productList];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query) ||
+        product.notes.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply price filter
+    if (selectedFilters.priceRange !== 'all') {
+      filtered = filtered.filter(product => {
+        const basePrice = 40; // Base price for all products
+        if (selectedFilters.priceRange === 'under150') return basePrice < 150;
+        if (selectedFilters.priceRange === '150-200') return basePrice >= 150 && basePrice <= 200;
+        if (selectedFilters.priceRange === 'over200') return basePrice > 200;
+        return true;
+      });
+    }
+
+    // Apply category filter
+    if (selectedFilters.category !== 'all') {
+      filtered = filtered.filter(product =>
+        product.category.toLowerCase().includes(selectedFilters.category.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    if (selectedFilters.sortBy === 'name') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (selectedFilters.sortBy === 'price-low') {
+      // All products have same base price, so keep original order
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (selectedFilters.sortBy === 'price-high') {
+      filtered.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    return filtered;
+  };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedFilters({
+      gender: 'all',
+      priceRange: 'all',
+      category: 'all',
+      sortBy: 'name'
+    });
+  };
+
   const handleWhatsAppCheckout = () => {
     if (cart.length === 0) {
       addToast('Your cart is empty!', 'error');
@@ -2174,31 +2230,62 @@ const App = () => {
                   🔒
                 </button>
               )}
+              {/* Wishlist Button */}
+              <button
+                onClick={() => setCurrentPage('wishlist')}
+                className="relative p-2 hover:text-gold transition-all duration-300"
+                style={{ color: currentPage === 'wishlist' ? '#D4AF37' : 'white' }}
+                title="My Favorites"
+              >
+                <Heart className={wishlist.length > 0 ? 'fill-red-500 text-red-500' : ''} />
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold animate-pulse">
+                    {wishlist.length}
+                  </span>
+                )}
+              </button>
+              {/* Cart Button */}
               <button
                 onClick={() => setCartOpen(!cartOpen)}
                 className="relative p-2 hover:text-gold transition-all duration-300"
                 style={{ color: cartOpen ? '#D4AF37' : 'white' }}
+                title="Shopping Cart"
               >
                 <ShoppingCart />
-                {cart.length > 0 && (
+                {getTotalItems() > 0 && (
                   <span className="absolute -top-1 -right-1 luxury-gradient text-black text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold animate-glow">
-                    {cart.length}
+                    {getTotalItems()}
                   </span>
                 )}
               </button>
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-4">
+            <div className="md:hidden flex items-center space-x-2">
               {getBackButton()}
+              {/* Mobile Wishlist */}
+              <button
+                onClick={() => setCurrentPage('wishlist')}
+                className="relative p-2"
+                style={{ color: currentPage === 'wishlist' ? '#D4AF37' : 'white' }}
+              >
+                <Heart className={wishlist.length > 0 ? 'fill-red-500 text-red-500' : ''} size={20} />
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px]">
+                    {wishlist.length}
+                  </span>
+                )}
+              </button>
+              {/* Mobile Cart */}
               <button
                 onClick={() => setCartOpen(!cartOpen)}
                 className="relative p-2"
+                style={{ color: cartOpen ? '#D4AF37' : 'white' }}
               >
-                <ShoppingCart />
-                {cart.length > 0 && (
-                  <span className="absolute -top-1 -right-1 luxury-gradient text-black text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                    {cart.length}
+                <ShoppingCart size={20} />
+                {getTotalItems() > 0 && (
+                  <span className="absolute -top-1 -right-1 luxury-gradient text-black text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px]">
+                    {getTotalItems()}
                   </span>
                 )}
               </button>
@@ -2380,43 +2467,320 @@ const App = () => {
     </div>
   );
 
-  const ProductGrid = ({ products, title }) => (
-    <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-16 relative overflow-hidden">
-      <div className="absolute inset-0 texture-overlay opacity-20"></div>
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
-        <h1 className="font-serif text-4xl md:text-5xl text-center mb-12 text-gradient font-bold tracking-wide">{title}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map(product => (
-            <div
-              key={product.id}
-              className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow"
-              onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+  // Search and Filter Bar Component
+  const SearchAndFilterBar = ({ onClose }) => {
+    const categories = [...new Set([...products.forHer, ...products.forHim].map(p => p.category))];
+
+    return (
+      <div className="glass-morphism rounded-2xl p-6 mb-8 border-2 border-gold/30 luxury-shadow-hover animate-fadeIn">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gold" size={20} />
+            <input
+              type="text"
+              placeholder="Search fragrances by name, category, or notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-black/40 border-2 border-gold/30 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:border-gold focus:outline-none transition-all duration-300 font-sans"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gold transition-colors"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-sans font-semibold text-gold mb-2">Category</label>
+            <select
+              value={selectedFilters.category}
+              onChange={(e) => setSelectedFilters({...selectedFilters, category: e.target.value})}
+              className="w-full bg-black/40 border-2 border-gold/30 rounded-lg px-4 py-2 text-white focus:border-gold focus:outline-none transition-all duration-300 font-sans cursor-pointer"
             >
-              <div className="h-48 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 228, 193, 0.25) 100%)' }}>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 228, 193, 0.4) 100%)' }}></div>
-                {product.images && product.images.length > 0 ? (
-                  <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-400 relative z-10" />
-                ) : (
-                  <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
-                )}
-              </div>
-              <div className="p-5 relative">
-                <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
-                <p className="text-sm mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
-                <p className="text-sm line-clamp-2 font-sans" style={{ color: '#D4AF37', opacity: 0.8 }}>{product.description}</p>
-                <div className="mt-4 flex justify-between items-center">
-                  <span className="text-lg font-bold text-gradient font-serif">From R40</span>
-                  <button className="luxury-gradient text-black px-4 py-2 text-sm font-sans font-semibold hover:scale-105 transition-all duration-300 luxury-shadow rounded-lg">
-                    View Details
-                  </button>
-                </div>
-              </div>
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Price Range Filter */}
+          <div>
+            <label className="block text-sm font-sans font-semibold text-gold mb-2">Price Range</label>
+            <select
+              value={selectedFilters.priceRange}
+              onChange={(e) => setSelectedFilters({...selectedFilters, priceRange: e.target.value})}
+              className="w-full bg-black/40 border-2 border-gold/30 rounded-lg px-4 py-2 text-white focus:border-gold focus:outline-none transition-all duration-300 font-sans cursor-pointer"
+            >
+              <option value="all">All Prices</option>
+              <option value="under150">Under R150</option>
+              <option value="150-200">R150 - R200</option>
+              <option value="over200">Over R200</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-sans font-semibold text-gold mb-2">Sort By</label>
+            <select
+              value={selectedFilters.sortBy}
+              onChange={(e) => setSelectedFilters({...selectedFilters, sortBy: e.target.value})}
+              className="w-full bg-black/40 border-2 border-gold/30 rounded-lg px-4 py-2 text-white focus:border-gold focus:outline-none transition-all duration-300 font-sans cursor-pointer"
+            >
+              <option value="name">Name (A-Z)</option>
+              <option value="price-low">Price (Low to High)</option>
+              <option value="price-high">Price (High to Low)</option>
+            </select>
+          </div>
+
+          {/* Reset Button */}
+          <div className="flex items-end">
+            <button
+              onClick={resetFilters}
+              className="w-full bg-gold/20 border-2 border-gold/50 text-gold px-4 py-2 rounded-lg font-sans font-semibold hover:bg-gold/30 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <Filter size={18} />
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(searchQuery || selectedFilters.category !== 'all' || selectedFilters.priceRange !== 'all') && (
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-gold/20">
+            <span className="text-sm text-gray-400 font-sans">Active filters:</span>
+            {searchQuery && (
+              <span className="bg-gold/20 text-gold px-3 py-1 rounded-full text-sm font-sans flex items-center gap-1">
+                Search: "{searchQuery}"
+                <button onClick={() => setSearchQuery('')} className="hover:text-white">
+                  <X size={14} />
+                </button>
+              </span>
+            )}
+            {selectedFilters.category !== 'all' && (
+              <span className="bg-gold/20 text-gold px-3 py-1 rounded-full text-sm font-sans flex items-center gap-1">
+                {selectedFilters.category}
+                <button onClick={() => setSelectedFilters({...selectedFilters, category: 'all'})} className="hover:text-white">
+                  <X size={14} />
+                </button>
+              </span>
+            )}
+            {selectedFilters.priceRange !== 'all' && (
+              <span className="bg-gold/20 text-gold px-3 py-1 rounded-full text-sm font-sans flex items-center gap-1">
+                {selectedFilters.priceRange === 'under150' ? 'Under R150' :
+                 selectedFilters.priceRange === '150-200' ? 'R150-R200' : 'Over R200'}
+                <button onClick={() => setSelectedFilters({...selectedFilters, priceRange: 'all'})} className="hover:text-white">
+                  <X size={14} />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ProductGrid = ({ products, title }) => {
+    const filteredProducts = filterAndSortProducts(products);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-16 relative overflow-hidden">
+        <div className="absolute inset-0 texture-overlay opacity-20"></div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <h1 className="font-serif text-4xl md:text-5xl text-center mb-8 text-gradient font-bold tracking-wide">{title}</h1>
+
+          {/* Search and Filter Bar */}
+          <SearchAndFilterBar />
+
+          {/* Results Count */}
+          <div className="mb-6 text-center">
+            <p className="text-gray-400 font-sans">
+              Showing <span className="text-gold font-bold">{filteredProducts.length}</span> of <span className="text-gold font-bold">{products.length}</span> fragrances
+            </p>
+          </div>
+
+          {/* Products Grid */}
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-20 animate-fadeIn">
+              <Search size={64} className="mx-auto mb-4 text-gold/30" />
+              <h3 className="text-2xl font-serif font-bold text-white mb-2">No fragrances found</h3>
+              <p className="text-gray-400 font-sans mb-6">Try adjusting your search or filters</p>
+              <button
+                onClick={resetFilters}
+                className="luxury-gradient text-black px-6 py-3 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300"
+              >
+                Clear All Filters
+              </button>
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map(product => (
+                <div
+                  key={product.id}
+                  className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow"
+                  onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+                >
+                  {/* Wishlist Heart Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product);
+                    }}
+                    className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur-sm border border-gold/30 hover:bg-black/80 hover:scale-110 transition-all duration-300 group/heart"
+                    title={isInWishlist(product.id) ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    <Heart
+                      size={20}
+                      className={`transition-all duration-300 ${
+                        isInWishlist(product.id)
+                          ? 'fill-red-500 text-red-500'
+                          : 'text-gold group-hover/heart:text-red-400'
+                      }`}
+                    />
+                  </button>
+
+                  <div className="h-48 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 228, 193, 0.25) 100%)' }}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 228, 193, 0.4) 100%)' }}></div>
+                    {product.images && product.images.length > 0 ? (
+                      <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-400 relative z-10" />
+                    ) : (
+                      <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
+                    )}
+                  </div>
+                  <div className="p-5 relative">
+                    <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
+                    <p className="text-sm mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
+                    <p className="text-sm line-clamp-2 font-sans" style={{ color: '#D4AF37', opacity: 0.8 }}>{product.description}</p>
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="text-lg font-bold text-gradient font-serif">From R40</span>
+                      <button className="luxury-gradient text-black px-4 py-2 text-sm font-sans font-semibold hover:scale-105 transition-all duration-300 luxury-shadow rounded-lg">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // Wishlist/Favorites Page
+  const WishlistPage = () => {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black py-16 relative overflow-hidden">
+        <div className="absolute inset-0 texture-overlay opacity-20"></div>
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <h1 className="font-serif text-4xl md:text-5xl mb-4 text-gradient font-bold tracking-wide flex items-center justify-center gap-3">
+              <Heart className="fill-red-500 text-red-500" size={48} />
+              My Favorites
+            </h1>
+            <p className="text-gray-400 font-sans text-lg">
+              {wishlist.length === 0
+                ? "You haven't added any favorites yet"
+                : `${wishlist.length} ${wishlist.length === 1 ? 'fragrance' : 'fragrances'} you love`
+              }
+            </p>
+          </div>
+
+          {wishlist.length === 0 ? (
+            <div className="text-center py-20 animate-fadeIn">
+              <Heart size={80} className="mx-auto mb-6 text-gold/20" />
+              <h3 className="text-2xl font-serif font-bold text-white mb-3">Your wishlist is empty</h3>
+              <p className="text-gray-400 font-sans mb-8 max-w-md mx-auto">
+                Start adding fragrances to your favorites by clicking the heart icon on any product
+              </p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => setCurrentPage('forHer')}
+                  className="luxury-gradient text-black px-8 py-3 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300"
+                >
+                  Shop For Her
+                </button>
+                <button
+                  onClick={() => setCurrentPage('forHim')}
+                  className="glass-morphism text-white border-2 border-gold px-8 py-3 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300"
+                >
+                  Shop For Him
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Clear All Button */}
+              <div className="flex justify-end mb-6">
+                <button
+                  onClick={() => {
+                    setWishlist([]);
+                    addToast('Cleared all favorites', 'info');
+                  }}
+                  className="text-red-400 hover:text-red-300 transition-colors duration-300 flex items-center gap-2 font-sans"
+                >
+                  <Trash2 size={18} />
+                  Clear All Favorites
+                </button>
+              </div>
+
+              {/* Wishlist Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {wishlist.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow animate-fadeIn"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                    onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+                  >
+                    {/* Remove from Wishlist Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(product);
+                      }}
+                      className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/80 backdrop-blur-sm border border-red-500/50 hover:bg-red-500/20 hover:scale-110 transition-all duration-300"
+                      title="Remove from favorites"
+                    >
+                      <Heart size={20} className="fill-red-500 text-red-500" />
+                    </button>
+
+                    <div className="h-48 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 228, 193, 0.25) 100%)' }}>
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 228, 193, 0.4) 100%)' }}></div>
+                      {product.images && product.images.length > 0 ? (
+                        <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-400 relative z-10" />
+                      ) : (
+                        <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
+                      )}
+                    </div>
+                    <div className="p-5 relative">
+                      <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
+                      <p className="text-sm mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
+                      <p className="text-sm line-clamp-2 font-sans" style={{ color: '#D4AF37', opacity: 0.8 }}>{product.description}</p>
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className="text-lg font-bold text-gradient font-serif">From R40</span>
+                        <button className="luxury-gradient text-black px-4 py-2 text-sm font-sans font-semibold hover:scale-105 transition-all duration-300 luxury-shadow rounded-lg">
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const ProductPage = () => {
     if (!selectedProduct) return null;
@@ -5733,6 +6097,7 @@ const App = () => {
       {currentPage === 'home' && !isAdmin && <HomePage />}
       {currentPage === 'forHer' && !isAdmin && <ProductGrid products={productList.forHer} title={siteContent.sections.forHer} />}
       {currentPage === 'forHim' && !isAdmin && <ProductGrid products={productList.forHim} title={siteContent.sections.forHim} />}
+      {currentPage === 'wishlist' && !isAdmin && <WishlistPage />}
       {currentPage === 'product' && !isAdmin && <ProductPage />}
       {currentPage === 'about' && !isAdmin && <AboutPage />}
       {currentPage === 'contact' && !isAdmin && <ContactPage />}
