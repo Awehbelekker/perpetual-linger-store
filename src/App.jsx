@@ -334,6 +334,158 @@ const NewsletterPopup = ({ onSubscribe, onDismiss }) => {
   );
 };
 
+// Product Quick View Modal Component
+const ProductQuickViewModal = ({ product, onClose, onAddToCart, getAverageRating, getReviewCount }) => {
+  const [selectedSize, setSelectedSize] = useState('30ml');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  if (!product) return null;
+
+  const sizes = [
+    { size: '30ml', price: 40 },
+    { size: '50ml', price: 60 },
+    { size: '100ml', price: 100 }
+  ];
+
+  const images = [
+    product.referenceImage || '/Final.png',
+    ...(product.images || [])
+  ].filter(Boolean);
+
+  const selectedPrice = sizes.find(s => s.size === selectedSize)?.price || 40;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+
+      {/* Modal */}
+      <div
+        className="relative glass-morphism rounded-2xl luxury-shadow-hover max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar border-2 border-gold/30 animate-slideIn"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-all duration-300"
+        >
+          <X size={24} className="text-gold" />
+        </button>
+
+        <div className="grid md:grid-cols-2 gap-8 p-8">
+          {/* Left: Image Gallery */}
+          <div>
+            {/* Main Image */}
+            <div className="relative mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-gold/10 to-transparent p-8 border-2 border-gold/20">
+              <img
+                src={images[currentImageIndex]}
+                alt={product.name}
+                className="w-full h-80 object-contain"
+              />
+            </div>
+
+            {/* Thumbnail Gallery */}
+            {images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {images.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                      currentImageIndex === index ? 'border-gold scale-110' : 'border-gold/20 hover:border-gold/50'
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Product Details */}
+          <div className="flex flex-col">
+            {/* Category */}
+            <p className="text-sm font-sans font-medium text-gold mb-2">{product.category}</p>
+
+            {/* Product Name */}
+            <h2 className="font-serif text-3xl font-bold text-gradient mb-3">{product.name}</h2>
+
+            {/* Star Rating */}
+            <div className="mb-4">
+              <StarRating
+                rating={parseFloat(getAverageRating(product.id))}
+                size={18}
+                showNumber={true}
+                reviewCount={getReviewCount(product.id)}
+              />
+            </div>
+
+            {/* Description */}
+            <p className="text-gray-300 font-sans mb-6 leading-relaxed">{product.description}</p>
+
+            {/* Notes */}
+            {product.notes && (
+              <div className="mb-6">
+                <h3 className="font-sans font-bold text-white mb-2">Fragrance Notes:</h3>
+                <p className="text-gray-400 font-sans text-sm">{product.notes}</p>
+              </div>
+            )}
+
+            {/* Size Selection */}
+            <div className="mb-6">
+              <h3 className="font-sans font-bold text-white mb-3">Select Size:</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {sizes.map(({ size, price }) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`p-3 rounded-lg border-2 transition-all duration-300 ${
+                      selectedSize === size
+                        ? 'border-gold bg-gold/20 scale-105'
+                        : 'border-gold/30 hover:border-gold/60'
+                    }`}
+                  >
+                    <div className="font-sans font-bold text-white">{size}</div>
+                    <div className="text-sm text-gold">R{price}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="mb-6">
+              <div className="text-4xl font-bold text-gradient">R{selectedPrice}</div>
+              <p className="text-sm text-gray-400 font-sans mt-1">Free delivery on all orders</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3 mt-auto">
+              <button
+                onClick={() => {
+                  onAddToCart(product, selectedSize, selectedPrice);
+                  onClose();
+                }}
+                className="w-full luxury-gradient text-black px-6 py-4 rounded-xl font-sans font-bold hover:scale-105 transition-all duration-300 luxury-shadow text-lg"
+              >
+                Add to Cart - R{selectedPrice}
+              </button>
+              <button
+                onClick={() => {
+                  onAddToCart(product, selectedSize, selectedPrice);
+                  // Navigate to product page for full details
+                }}
+                className="w-full bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-sans font-semibold transition-all duration-300 border-2 border-gold/30"
+              >
+                View Full Details
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Image Picker Component
 const ImagePicker = ({ value, onChange, imageLibrary, loadingImages, onUpload, onRefreshLibrary, label = "Image" }) => {
   const [showLibrary, setShowLibrary] = useState(false);
@@ -723,6 +875,23 @@ const App = () => {
     category: 'all', // 'all', or specific category
     sortBy: 'name' // 'name', 'price-low', 'price-high', 'rating'
   });
+
+  // Track search queries with debounce
+  useEffect(() => {
+    if (searchQuery.length >= 3) {
+      const timer = setTimeout(() => {
+        const allProducts = [...productList.forHer, ...productList.forHim];
+        const results = allProducts.filter(product =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.notes && product.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        trackSearch(searchQuery, results.length);
+      }, 1000); // Wait 1 second after user stops typing
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   // Reviews State
@@ -817,6 +986,8 @@ const App = () => {
     setNewsletterEmails([...newsletterEmails, email]);
     setShowNewsletterPopup(false);
     addToast('🎉 Welcome! Check your email for your 10% discount code!', 'success');
+    // Track analytics
+    trackNewsletterSignup(email);
   };
 
   const dismissNewsletter = () => {
@@ -824,6 +995,164 @@ const App = () => {
     setNewsletterDismissed(true);
     localStorage.setItem('perpetualLingerNewsletterDismissed', 'true');
   };
+
+  // ============================================================================
+  // GOOGLE ANALYTICS 4 INTEGRATION
+  // ============================================================================
+
+  const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'; // Replace with your GA4 Measurement ID
+
+  // Initialize Google Analytics
+  useEffect(() => {
+    // Load GA4 script
+    const script1 = document.createElement('script');
+    script1.async = true;
+    script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(script1);
+
+    // Initialize gtag
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){window.dataLayer.push(arguments);}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_MEASUREMENT_ID, {
+      page_path: window.location.pathname,
+    });
+
+    return () => {
+      // Cleanup
+      if (script1.parentNode) {
+        script1.parentNode.removeChild(script1);
+      }
+    };
+  }, []);
+
+  // Track page views
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_title: currentPage,
+        page_location: window.location.href,
+        page_path: `/${currentPage}`,
+      });
+    }
+  }, [currentPage]);
+
+  // Analytics tracking functions
+  const trackEvent = (eventName, eventParams = {}) => {
+    if (window.gtag) {
+      window.gtag('event', eventName, eventParams);
+    }
+    // Also log to console in development
+    if (import.meta.env.DEV) {
+      console.log('📊 Analytics Event:', eventName, eventParams);
+    }
+  };
+
+  const trackProductView = (product) => {
+    trackEvent('view_item', {
+      currency: 'ZAR',
+      value: product.price,
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        item_category: product.category,
+        price: product.price,
+      }]
+    });
+  };
+
+  const trackAddToCart = (product, quantity = 1) => {
+    trackEvent('add_to_cart', {
+      currency: 'ZAR',
+      value: product.price * quantity,
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        item_category: product.category,
+        price: product.price,
+        quantity: quantity,
+      }]
+    });
+  };
+
+  const trackRemoveFromCart = (product, quantity = 1) => {
+    trackEvent('remove_from_cart', {
+      currency: 'ZAR',
+      value: product.price * quantity,
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        item_category: product.category,
+        price: product.price,
+        quantity: quantity,
+      }]
+    });
+  };
+
+  const trackBeginCheckout = (checkoutMethod) => {
+    trackEvent('begin_checkout', {
+      currency: 'ZAR',
+      value: getTotalPrice(),
+      items: cart.map(item => ({
+        item_id: item.id,
+        item_name: item.name,
+        item_category: item.category,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      checkout_method: checkoutMethod, // 'whatsapp' or 'peach_payments'
+    });
+  };
+
+  const trackPurchase = (transactionId, checkoutMethod) => {
+    trackEvent('purchase', {
+      transaction_id: transactionId,
+      currency: 'ZAR',
+      value: getTotalPrice(),
+      items: cart.map(item => ({
+        item_id: item.id,
+        item_name: item.name,
+        item_category: item.category,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      checkout_method: checkoutMethod,
+    });
+  };
+
+  const trackSearch = (searchTerm, resultsCount) => {
+    trackEvent('search', {
+      search_term: searchTerm,
+      results_count: resultsCount,
+    });
+  };
+
+  const trackAddToWishlist = (product) => {
+    trackEvent('add_to_wishlist', {
+      currency: 'ZAR',
+      value: product.price,
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        item_category: product.category,
+        price: product.price,
+      }]
+    });
+  };
+
+  const trackNewsletterSignup = (email) => {
+    trackEvent('newsletter_signup', {
+      method: 'email',
+      email_domain: email.split('@')[1],
+    });
+  };
+
+  // ============================================================================
+  // PRODUCT QUICK VIEW MODAL
+  // ============================================================================
+
+  // State already declared above with wishlist state
 
   // CMS Content State - Load from localStorage or use defaults
   const defaultContent = {
@@ -2172,7 +2501,8 @@ const App = () => {
       size: size,
       price: price,
       quantity: 1,
-      image: product.referenceImage || '/Final.png'
+      image: product.referenceImage || '/Final.png',
+      category: product.category
     };
 
     const existingItem = cart.find(item => item.id === cartItem.id);
@@ -2187,6 +2517,10 @@ const App = () => {
       setCart([...cart, cartItem]);
       addToast(`Added ${product.name} to cart!`, 'success');
     }
+
+    // Track analytics
+    trackAddToCart(product, 1);
+
     setCartOpen(true);
   };
 
@@ -2195,6 +2529,11 @@ const App = () => {
     setCart(cart.filter(item => item.id !== itemId));
     if (item) {
       addToast(`Removed ${item.name} from cart`, 'info');
+      // Track analytics
+      const product = [...productList.forHer, ...productList.forHim].find(p => p.id === item.productId);
+      if (product) {
+        trackRemoveFromCart(product, item.quantity);
+      }
     }
   };
 
@@ -2230,6 +2569,8 @@ const App = () => {
     } else {
       setWishlist([...wishlist, product]);
       addToast(`Added ${product.name} to favorites!`, 'success');
+      // Track analytics
+      trackAddToWishlist(product);
     }
   };
 
@@ -2609,7 +2950,11 @@ const App = () => {
             {mostPopular.map(product => (
               <div
                 key={product.id}
-                onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setCurrentPage('product');
+                  trackProductView(product);
+                }}
                 className="glass-morphism rounded-xl p-4 cursor-pointer hover:scale-105 transition-all duration-400 card-glow luxury-shadow hover:luxury-shadow-hover"
               >
                 <div className="h-24 flex items-center justify-center mb-3 rounded-lg overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 228, 193, 0.3) 100%)' }}>
@@ -2820,7 +3165,11 @@ const App = () => {
                 <div
                   key={product.id}
                   className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow"
-                  onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+                  onClick={() => {
+                    setSelectedProduct(product);
+                    setCurrentPage('product');
+                    trackProductView(product);
+                  }}
                 >
                   {/* Wishlist Heart Button */}
                   <button
@@ -2848,6 +3197,17 @@ const App = () => {
                     ) : (
                       <div className="text-6xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
                     )}
+
+                    {/* Quick View Button - appears on hover */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setQuickViewProduct(product);
+                      }}
+                      className="absolute inset-x-4 bottom-4 z-20 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 luxury-gradient text-black px-4 py-2 rounded-lg font-sans font-bold luxury-shadow"
+                    >
+                      Quick View
+                    </button>
                   </div>
                   <div className="p-5 relative">
                     <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
@@ -2942,7 +3302,11 @@ const App = () => {
                     key={product.id}
                     className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow animate-fadeIn"
                     style={{ animationDelay: `${index * 0.1}s` }}
-                    onClick={() => { setSelectedProduct(product); setCurrentPage('product'); }}
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setCurrentPage('product');
+                      trackProductView(product);
+                    }}
                   >
                     {/* Remove from Wishlist Button */}
                     <button
@@ -6405,6 +6769,17 @@ const App = () => {
         <NewsletterPopup
           onSubscribe={subscribeToNewsletter}
           onDismiss={dismissNewsletter}
+        />
+      )}
+
+      {/* Product Quick View Modal */}
+      {quickViewProduct && !isAdmin && (
+        <ProductQuickViewModal
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={addToCart}
+          getAverageRating={getAverageRating}
+          getReviewCount={getReviewCount}
         />
       )}
 
