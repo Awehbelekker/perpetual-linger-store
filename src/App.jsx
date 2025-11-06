@@ -240,6 +240,32 @@ const CountdownTimer = ({ endDate }) => {
   );
 };
 
+// Star Rating Component
+const StarRating = ({ rating, size = 16, showNumber = false, reviewCount = 0 }) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex">
+        {[...Array(fullStars)].map((_, i) => (
+          <Star key={`full-${i}`} size={size} className="fill-gold text-gold" />
+        ))}
+        {hasHalfStar && <StarHalf size={size} className="fill-gold text-gold" />}
+        {[...Array(emptyStars)].map((_, i) => (
+          <Star key={`empty-${i}`} size={size} className="text-gray-600" />
+        ))}
+      </div>
+      {showNumber && (
+        <span className="text-sm text-gray-400 font-sans ml-1">
+          {rating > 0 ? `${rating} (${reviewCount})` : 'No reviews yet'}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // Image Picker Component
 const ImagePicker = ({ value, onChange, imageLibrary, loadingImages, onUpload, onRefreshLibrary, label = "Image" }) => {
   const [showLibrary, setShowLibrary] = useState(false);
@@ -630,6 +656,61 @@ const App = () => {
     sortBy: 'name' // 'name', 'price-low', 'price-high', 'rating'
   });
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+  // Reviews State
+  const [reviews, setReviews] = useState(() => {
+    const savedReviews = localStorage.getItem('perpetualLingerReviews');
+    return savedReviews ? JSON.parse(savedReviews) : {
+      // Sample reviews for demonstration
+      'chanel-coco': [
+        { id: 1, name: 'Sarah M.', rating: 5, date: '2024-01-15', comment: 'Absolutely love this! Smells exactly like the original and lasts all day. Best purchase ever!', verified: true },
+        { id: 2, name: 'Thandi K.', rating: 5, date: '2024-01-10', comment: 'Amazing quality! I get compliments everywhere I go. Will definitely buy again.', verified: true },
+        { id: 3, name: 'Lisa P.', rating: 4, date: '2024-01-05', comment: 'Great scent, very close to the original. Longevity is good but not as long as the designer version.', verified: false }
+      ],
+      'dior-sauvage': [
+        { id: 4, name: 'Michael T.', rating: 5, date: '2024-01-20', comment: 'This is my signature scent now! Incredible quality and the price is unbeatable.', verified: true },
+        { id: 5, name: 'John D.', rating: 5, date: '2024-01-18', comment: 'Smells fantastic! My wife loves it and so do I. Highly recommend!', verified: true }
+      ],
+      'lancome-belle': [
+        { id: 6, name: 'Emma W.', rating: 5, date: '2024-01-22', comment: 'Beautiful fragrance! Sweet but not overpowering. Perfect for everyday wear.', verified: true }
+      ]
+    };
+  });
+
+  // Save reviews to localStorage
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerReviews', JSON.stringify(reviews));
+  }, [reviews]);
+
+  // Add review function
+  const addReview = (productId, reviewData) => {
+    const newReview = {
+      id: Date.now(),
+      ...reviewData,
+      date: new Date().toISOString().split('T')[0],
+      verified: false // Admin can verify later
+    };
+
+    setReviews(prev => ({
+      ...prev,
+      [productId]: [...(prev[productId] || []), newReview]
+    }));
+
+    addToast('Review submitted! Thank you for your feedback.', 'success');
+  };
+
+  // Get average rating for a product
+  const getAverageRating = (productId) => {
+    const productReviews = reviews[productId] || [];
+    if (productReviews.length === 0) return 0;
+    const sum = productReviews.reduce((acc, review) => acc + review.rating, 0);
+    return (sum / productReviews.length).toFixed(1);
+  };
+
+  // Get review count for a product
+  const getReviewCount = (productId) => {
+    return (reviews[productId] || []).length;
+  };
 
   // CMS Content State - Load from localStorage or use defaults
   const defaultContent = {
@@ -2658,6 +2739,15 @@ const App = () => {
                   <div className="p-5 relative">
                     <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
                     <p className="text-sm mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
+                    {/* Star Rating */}
+                    <div className="mb-2">
+                      <StarRating
+                        rating={parseFloat(getAverageRating(product.id))}
+                        size={14}
+                        showNumber={true}
+                        reviewCount={getReviewCount(product.id)}
+                      />
+                    </div>
                     <p className="text-sm line-clamp-2 font-sans" style={{ color: '#D4AF37', opacity: 0.8 }}>{product.description}</p>
                     <div className="mt-4 flex justify-between items-center">
                       <span className="text-lg font-bold text-gradient font-serif">From R40</span>
@@ -2764,6 +2854,15 @@ const App = () => {
                     <div className="p-5 relative">
                       <h3 className="font-serif font-bold text-lg mb-1 transition-colors duration-300 text-white">{product.name}</h3>
                       <p className="text-sm mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
+                      {/* Star Rating */}
+                      <div className="mb-2">
+                        <StarRating
+                          rating={parseFloat(getAverageRating(product.id))}
+                          size={14}
+                          showNumber={true}
+                          reviewCount={getReviewCount(product.id)}
+                        />
+                      </div>
                       <p className="text-sm line-clamp-2 font-sans" style={{ color: '#D4AF37', opacity: 0.8 }}>{product.description}</p>
                       <div className="mt-4 flex justify-between items-center">
                         <span className="text-lg font-bold text-gradient font-serif">From R40</span>
@@ -2872,6 +2971,73 @@ const App = () => {
                     <strong>Note:</strong> {siteContent.sections.productDisclaimer}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Customer Reviews Section */}
+            <div className="p-8 border-t-2 border-gold/20">
+              <div className="mb-8">
+                <h2 className="font-serif text-3xl font-bold text-white mb-4">Customer Reviews</h2>
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-gradient mb-2">
+                      {getAverageRating(selectedProduct.id) || '0.0'}
+                    </div>
+                    <StarRating
+                      rating={parseFloat(getAverageRating(selectedProduct.id))}
+                      size={20}
+                    />
+                    <p className="text-sm text-gray-400 mt-2 font-sans">
+                      {getReviewCount(selectedProduct.id)} {getReviewCount(selectedProduct.id) === 1 ? 'review' : 'reviews'}
+                    </p>
+                  </div>
+                  <div className="flex-1">
+                    <button
+                      onClick={() => {
+                        const name = prompt('Your name:');
+                        if (!name) return;
+                        const rating = prompt('Rating (1-5 stars):');
+                        if (!rating || rating < 1 || rating > 5) return;
+                        const comment = prompt('Your review:');
+                        if (!comment) return;
+                        addReview(selectedProduct.id, { name, rating: parseInt(rating), comment });
+                      }}
+                      className="luxury-gradient text-black px-6 py-3 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300 luxury-shadow"
+                    >
+                      Write a Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-4">
+                {(reviews[selectedProduct.id] || []).length === 0 ? (
+                  <div className="text-center py-12 glass-morphism rounded-lg">
+                    <Star size={48} className="mx-auto mb-4 text-gold/30" />
+                    <p className="text-gray-400 font-sans text-lg">No reviews yet. Be the first to review this fragrance!</p>
+                  </div>
+                ) : (
+                  (reviews[selectedProduct.id] || []).map((review) => (
+                    <div key={review.id} className="glass-morphism rounded-lg p-6 border-2 border-gold/20 hover:border-gold/40 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-sans font-bold text-white">{review.name}</h4>
+                            {review.verified && (
+                              <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full font-sans font-semibold border border-green-500/30">
+                                ✓ Verified Purchase
+                              </span>
+                            )}
+                          </div>
+                          <StarRating rating={review.rating} size={14} />
+                        </div>
+                        <span className="text-sm text-gray-500 font-sans">{review.date}</span>
+                      </div>
+                      <p className="text-gray-300 font-sans leading-relaxed">{review.comment}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
