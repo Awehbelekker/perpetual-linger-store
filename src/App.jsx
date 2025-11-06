@@ -266,6 +266,74 @@ const StarRating = ({ rating, size = 16, showNumber = false, reviewCount = 0 }) 
   );
 };
 
+// Newsletter Popup Component
+const NewsletterPopup = ({ onSubscribe, onDismiss }) => {
+  const [email, setEmail] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubscribe(email);
+    setEmail('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fadeIn">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onDismiss}
+      ></div>
+
+      {/* Modal */}
+      <div className="relative glass-morphism rounded-2xl luxury-shadow-hover max-w-md w-full p-8 border-2 border-gold/30 animate-slideIn">
+        {/* Close Button */}
+        <button
+          onClick={onDismiss}
+          className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-all duration-300"
+        >
+          <X size={24} className="text-gold" />
+        </button>
+
+        {/* Content */}
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4 animate-bounce-subtle">✨</div>
+          <h2 className="font-serif text-3xl font-bold text-gradient mb-3">
+            Get 10% Off Your First Order!
+          </h2>
+          <p className="text-gray-300 font-sans text-lg">
+            Subscribe to our newsletter and receive exclusive offers, new arrivals, and fragrance tips.
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full bg-black/40 border-2 border-gold/30 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-gold focus:outline-none transition-all duration-300 font-sans"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full luxury-gradient text-black px-6 py-3 rounded-xl font-sans font-bold hover:scale-105 transition-all duration-300 luxury-shadow text-lg"
+          >
+            Get My 10% Discount
+          </button>
+        </form>
+
+        {/* Fine Print */}
+        <p className="text-xs text-gray-500 text-center mt-4 font-sans">
+          By subscribing, you agree to receive marketing emails. You can unsubscribe at any time.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // Image Picker Component
 const ImagePicker = ({ value, onChange, imageLibrary, loadingImages, onUpload, onRefreshLibrary, label = "Image" }) => {
   const [showLibrary, setShowLibrary] = useState(false);
@@ -710,6 +778,51 @@ const App = () => {
   // Get review count for a product
   const getReviewCount = (productId) => {
     return (reviews[productId] || []).length;
+  };
+
+  // Newsletter State
+  const [newsletterEmails, setNewsletterEmails] = useState(() => {
+    const saved = localStorage.getItem('perpetualLingerNewsletterEmails');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
+  const [newsletterDismissed, setNewsletterDismissed] = useState(() => {
+    return localStorage.getItem('perpetualLingerNewsletterDismissed') === 'true';
+  });
+
+  // Show newsletter popup after 10 seconds if not dismissed
+  useEffect(() => {
+    if (!newsletterDismissed && newsletterEmails.length === 0) {
+      const timer = setTimeout(() => {
+        setShowNewsletterPopup(true);
+      }, 10000); // 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [newsletterDismissed, newsletterEmails.length]);
+
+  // Save newsletter emails to localStorage
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerNewsletterEmails', JSON.stringify(newsletterEmails));
+  }, [newsletterEmails]);
+
+  const subscribeToNewsletter = (email) => {
+    if (!email || !email.includes('@')) {
+      addToast('Please enter a valid email address', 'error');
+      return;
+    }
+    if (newsletterEmails.includes(email)) {
+      addToast('You are already subscribed!', 'info');
+      return;
+    }
+    setNewsletterEmails([...newsletterEmails, email]);
+    setShowNewsletterPopup(false);
+    addToast('🎉 Welcome! Check your email for your 10% discount code!', 'success');
+  };
+
+  const dismissNewsletter = () => {
+    setShowNewsletterPopup(false);
+    setNewsletterDismissed(true);
+    localStorage.setItem('perpetualLingerNewsletterDismissed', 'true');
   };
 
   // CMS Content State - Load from localStorage or use defaults
@@ -6232,10 +6345,37 @@ const App = () => {
           </div>
 
           <div>
-            <h3 className="font-bold mb-4">Connect</h3>
-            <p className="text-gray-400 mb-2">WhatsApp: 061 010 0845</p>
-            <div className="flex space-x-4 mt-4">
-              <a href="#" className="text-amber-400 hover:text-amber-300"><Instagram /></a>
+            <h3 className="font-bold mb-4">Newsletter</h3>
+            <p className="text-gray-400 mb-3 text-sm">Get 10% off your first order!</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                subscribeToNewsletter(email);
+                e.target.reset();
+              }}
+              className="space-y-2"
+            >
+              <input
+                type="email"
+                name="email"
+                placeholder="Your email"
+                className="w-full bg-black/40 border border-gold/30 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-gold focus:outline-none transition-all duration-300"
+                required
+              />
+              <button
+                type="submit"
+                className="w-full luxury-gradient text-black px-4 py-2 rounded-lg text-sm font-bold hover:scale-105 transition-all duration-300"
+              >
+                Subscribe
+              </button>
+            </form>
+            <div className="mt-4">
+              <h3 className="font-bold mb-2">Connect</h3>
+              <p className="text-gray-400 mb-2 text-sm">WhatsApp: 061 010 0845</p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-amber-400 hover:text-amber-300"><Instagram /></a>
+              </div>
             </div>
           </div>
         </div>
@@ -6259,6 +6399,14 @@ const App = () => {
 
       <Navigation />
       <Cart />
+
+      {/* Newsletter Popup */}
+      {showNewsletterPopup && !isAdmin && (
+        <NewsletterPopup
+          onSubscribe={subscribeToNewsletter}
+          onDismiss={dismissNewsletter}
+        />
+      )}
 
       {currentPage === 'home' && !isAdmin && <HomePage />}
       {currentPage === 'forHer' && !isAdmin && <ProductGrid products={productList.forHer} title={siteContent.sections.forHer} />}
