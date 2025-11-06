@@ -1154,6 +1154,96 @@ const App = () => {
 
   // State already declared above with wishlist state
 
+  // ============================================================================
+  // RELATED PRODUCTS
+  // ============================================================================
+
+  const getRelatedProducts = (product, count = 4) => {
+    const allProducts = [...productList.forHer, ...productList.forHim];
+
+    // Filter products from the same category, excluding the current product
+    let related = allProducts.filter(p =>
+      p.id !== product.id && p.category === product.category
+    );
+
+    // If not enough products in same category, add products from same gender
+    if (related.length < count) {
+      const sameGender = allProducts.filter(p =>
+        p.id !== product.id &&
+        !related.includes(p) &&
+        ((productList.forHer.includes(product) && productList.forHer.includes(p)) ||
+         (productList.forHim.includes(product) && productList.forHim.includes(p)))
+      );
+      related = [...related, ...sameGender];
+    }
+
+    // If still not enough, add random products
+    if (related.length < count) {
+      const remaining = allProducts.filter(p =>
+        p.id !== product.id && !related.includes(p)
+      );
+      related = [...related, ...remaining];
+    }
+
+    // Shuffle and return the requested count
+    return related.sort(() => Math.random() - 0.5).slice(0, count);
+  };
+
+  // ============================================================================
+  // DISCOUNT CODES SYSTEM
+  // ============================================================================
+
+  const [discountCodes] = useState({
+    'WELCOME10': { type: 'percentage', value: 10, description: 'Welcome discount - 10% off' },
+    'FIRST15': { type: 'percentage', value: 15, description: 'First order - 15% off' },
+    'SAVE20': { type: 'percentage', value: 20, description: 'Special offer - 20% off' },
+    'FREESHIP': { type: 'free_shipping', value: 0, description: 'Free shipping' },
+    'LUXURY25': { type: 'percentage', value: 25, description: 'Luxury discount - 25% off' },
+  });
+
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountInput, setDiscountInput] = useState('');
+
+  const applyDiscountCode = (code) => {
+    const upperCode = code.toUpperCase().trim();
+    const discount = discountCodes[upperCode];
+
+    if (discount) {
+      setAppliedDiscount({ code: upperCode, ...discount });
+      addToast(`✨ Discount applied: ${discount.description}!`, 'success');
+      setDiscountInput('');
+      // Track analytics
+      trackEvent('apply_discount', {
+        code: upperCode,
+        discount_type: discount.type,
+        discount_value: discount.value,
+      });
+    } else {
+      addToast('Invalid discount code', 'error');
+    }
+  };
+
+  const removeDiscount = () => {
+    setAppliedDiscount(null);
+    addToast('Discount removed', 'info');
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedDiscount) return 0;
+
+    const subtotal = getTotalPrice();
+    if (appliedDiscount.type === 'percentage') {
+      return (subtotal * appliedDiscount.value) / 100;
+    } else if (appliedDiscount.type === 'fixed') {
+      return appliedDiscount.value;
+    }
+    return 0;
+  };
+
+  const getFinalTotal = () => {
+    return getTotalPrice() - calculateDiscount();
+  };
+
   // CMS Content State - Load from localStorage or use defaults
   const defaultContent = {
     logo: '/Final.png', // Site logo
@@ -3515,6 +3605,67 @@ const App = () => {
                     </div>
                   ))
                 )}
+              </div>
+            </div>
+
+            {/* Related Products Section */}
+            <div className="p-8 border-t-2 border-gold/20">
+              <h2 className="font-serif text-3xl font-bold text-white mb-6">You May Also Like</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {getRelatedProducts(selectedProduct, 4).map((product) => (
+                  <div
+                    key={product.id}
+                    className="glass-morphism rounded-xl luxury-shadow overflow-hidden hover:luxury-shadow-hover transition-all duration-400 cursor-pointer transform hover:-translate-y-2 hover:scale-105 group relative card-glow animate-fadeIn"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      trackProductView(product);
+                    }}
+                  >
+                    {/* Wishlist Heart Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(product);
+                      }}
+                      className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur-sm border border-gold/30 hover:bg-black/80 hover:scale-110 transition-all duration-300 group/heart"
+                      title={isInWishlist(product.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart
+                        size={16}
+                        className={`transition-all duration-300 ${
+                          isInWishlist(product.id)
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-gold group-hover/heart:text-red-400'
+                        }`}
+                      />
+                    </button>
+
+                    <div className="h-40 flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 228, 193, 0.25) 100%)' }}>
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400" style={{ background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 228, 193, 0.4) 100%)' }}></div>
+                      {product.images && product.images.length > 0 ? (
+                        <img src={product.images[product.mainImageIndex || 0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-400 relative z-10" />
+                      ) : (
+                        <div className="text-5xl group-hover:scale-110 transition-transform duration-400 relative z-10">🧴</div>
+                      )}
+                    </div>
+                    <div className="p-4 relative">
+                      <h3 className="font-serif font-bold text-base mb-1 transition-colors duration-300 text-white line-clamp-1">{product.name}</h3>
+                      <p className="text-xs mb-2 font-sans font-medium" style={{ color: '#D4AF37' }}>{product.category}</p>
+                      {/* Star Rating */}
+                      <div className="mb-2">
+                        <StarRating
+                          rating={parseFloat(getAverageRating(product.id))}
+                          size={12}
+                          showNumber={false}
+                        />
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gradient font-serif">From R40</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -6608,12 +6759,53 @@ const App = () => {
         {/* Enhanced Cart Footer */}
         {cart.length > 0 && (
           <div className="border-t-2 p-6 space-y-4 bg-gradient-to-b from-neutral-900 to-black" style={{ borderColor: '#D4AF37' }}>
+            {/* Discount Code Input */}
+            <div className="pb-4 border-b border-gold/20">
+              <label className="block text-sm font-sans font-medium text-gray-400 mb-2">Discount Code</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={discountInput}
+                  onChange={(e) => setDiscountInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && applyDiscountCode(discountInput)}
+                  placeholder="Enter code"
+                  className="flex-1 bg-black/40 border border-gold/30 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-gold focus:outline-none transition-all duration-300 font-sans text-sm"
+                />
+                <button
+                  onClick={() => applyDiscountCode(discountInput)}
+                  className="luxury-gradient text-black px-4 py-2 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300 text-sm"
+                >
+                  Apply
+                </button>
+              </div>
+              {appliedDiscount && (
+                <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 text-sm font-sans font-semibold">✓ {appliedDiscount.code}</span>
+                    <span className="text-gray-400 text-xs font-sans">({appliedDiscount.description})</span>
+                  </div>
+                  <button
+                    onClick={removeDiscount}
+                    className="text-red-400 hover:text-red-300 text-xs font-sans"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Subtotal Breakdown */}
             <div className="space-y-2 pb-4 border-b border-gold/20">
               <div className="flex justify-between items-center text-sm font-sans">
                 <span className="text-gray-400">Subtotal ({getTotalItems()} items)</span>
                 <span className="text-white font-semibold">R{getTotalPrice().toFixed(2)}</span>
               </div>
+              {appliedDiscount && (
+                <div className="flex justify-between items-center text-sm font-sans">
+                  <span className="text-green-400">Discount ({appliedDiscount.value}%)</span>
+                  <span className="text-green-400 font-semibold">-R{calculateDiscount().toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-sm font-sans">
                 <span className="text-gray-400">Delivery</span>
                 <span className="text-green-400 font-semibold">FREE</span>
@@ -6623,7 +6815,7 @@ const App = () => {
             {/* Total */}
             <div className="flex justify-between items-center py-2">
               <span className="text-2xl font-serif font-bold text-white">Total:</span>
-              <span className="text-3xl font-serif font-bold text-gradient">R{getTotalPrice().toFixed(2)}</span>
+              <span className="text-3xl font-serif font-bold text-gradient">R{getFinalTotal().toFixed(2)}</span>
             </div>
 
             {/* Checkout Buttons */}
