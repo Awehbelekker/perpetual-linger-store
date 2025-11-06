@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X, Phone, Mail, MapPin, Instagram, ChevronRight, ArrowLeft, Home } from 'lucide-react';
+import { ShoppingCart, Menu, X, Phone, Mail, MapPin, Instagram, ChevronRight, ArrowLeft, Home, Plus, Minus, Trash2, Heart, Search, Filter, Star, StarHalf } from 'lucide-react';
 import { ToastContainer } from './components/Toast';
 import { ProductCardSkeleton } from './components/SkeletonLoader';
 
@@ -609,12 +609,27 @@ const ContentBlockRenderer = ({ block, allProducts, previewMode = false }) => {
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('perpetualLingerCart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [wishlist, setWishlist] = useState(() => {
+    const savedWishlist = localStorage.getItem('perpetualLingerWishlist');
+    return savedWishlist ? JSON.parse(savedWishlist) : [];
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState({
+    gender: 'all', // 'all', 'forHer', 'forHim'
+    priceRange: 'all', // 'all', 'under150', '150-200', 'over200'
+    category: 'all', // 'all', or specific category
+    sortBy: 'name' // 'name', 'price-low', 'price-high', 'rating'
+  });
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   // CMS Content State - Load from localStorage or use defaults
   const defaultContent = {
@@ -791,6 +806,16 @@ const App = () => {
   useEffect(() => {
     localStorage.setItem('particleEffects', JSON.stringify(particleEffects));
   }, [particleEffects]);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerCart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Save wishlist to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerWishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
 
   const addContentBlock = (blockType, position = null) => {
     const newBlock = {
@@ -1948,10 +1973,12 @@ const App = () => {
   const addToCart = (product, size, price) => {
     const cartItem = {
       id: `${product.id}-${size}`,
+      productId: product.id,
       name: product.name,
       size: size,
       price: price,
-      quantity: 1
+      quantity: 1,
+      image: product.referenceImage || '/Final.png'
     };
 
     const existingItem = cart.find(item => item.id === cartItem.id);
@@ -1981,14 +2008,39 @@ const App = () => {
     if (newQuantity < 1) {
       removeFromCart(itemId);
     } else {
-      setCart(cart.map(item => 
+      setCart(cart.map(item =>
         item.id === itemId ? { ...item, quantity: newQuantity } : item
       ));
     }
   };
 
+  const clearCart = () => {
+    setCart([]);
+    addToast('Cart cleared', 'info');
+  };
+
   const getTotalPrice = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  // Wishlist functions
+  const toggleWishlist = (product) => {
+    const isInWishlist = wishlist.some(item => item.id === product.id);
+    if (isInWishlist) {
+      setWishlist(wishlist.filter(item => item.id !== product.id));
+      addToast(`Removed ${product.name} from favorites`, 'info');
+    } else {
+      setWishlist([...wishlist, product]);
+      addToast(`Added ${product.name} to favorites!`, 'success');
+    }
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlist.some(item => item.id === productId);
   };
 
   const handleWhatsAppCheckout = () => {
@@ -5417,63 +5469,128 @@ const App = () => {
   );
 
   const Cart = () => (
-    <div className={`fixed right-0 top-0 h-full w-full md:w-96 bg-gradient-to-b from-black via-neutral-900 to-black luxury-shadow-hover transform transition-all duration-400 z-50 ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <div className={`fixed right-0 top-0 h-full w-full md:w-[450px] bg-gradient-to-b from-black via-neutral-900 to-black luxury-shadow-hover transform transition-all duration-400 z-50 ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex flex-col h-full">
-        <div className="flex justify-between items-center p-6 border-b-2" style={{ borderColor: '#D4AF37' }}>
-          <h2 className="text-2xl font-serif font-bold text-gradient">Your Cart</h2>
-          <button onClick={() => setCartOpen(false)} className="p-2 hover:bg-neutral-800 rounded-lg transition-all duration-300" style={{ color: '#D4AF37' }}>
-            <X />
-          </button>
+        {/* Enhanced Header */}
+        <div className="p-6 border-b-2 bg-gradient-to-r from-black to-neutral-900" style={{ borderColor: '#D4AF37' }}>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-3xl font-serif font-bold text-gradient flex items-center gap-2">
+              <ShoppingCart className="text-gold" size={28} />
+              Your Cart
+            </h2>
+            <button
+              onClick={() => setCartOpen(false)}
+              className="p-2 hover:bg-neutral-800 rounded-lg transition-all duration-300 hover:scale-110"
+              style={{ color: '#D4AF37' }}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          {cart.length > 0 && (
+            <div className="flex items-center justify-between text-sm font-sans">
+              <span className="text-gray-400">{getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'}</span>
+              <button
+                onClick={clearCart}
+                className="text-red-400 hover:text-red-300 transition-colors duration-300 flex items-center gap-1"
+              >
+                <Trash2 size={14} />
+                Clear All
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Cart Items */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {cart.length === 0 ? (
-            <div className="text-center mt-12" style={{ color: '#D4AF37' }}>
-              <ShoppingCart size={48} className="mx-auto mb-4 opacity-50" />
-              <p className="font-sans">Your cart is empty</p>
+            <div className="text-center mt-20 animate-fadeIn">
+              <div className="mb-6 relative">
+                <ShoppingCart size={64} className="mx-auto opacity-30 text-gold" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 border-4 border-gold/20 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <h3 className="text-xl font-serif font-bold text-white mb-2">Your Cart is Empty</h3>
+              <p className="text-gray-400 font-sans mb-6">Discover our luxury fragrances</p>
               <button
                 onClick={() => {
                   setCartOpen(false);
                   setCurrentPage('forHer');
                 }}
-                className="mt-6 luxury-gradient text-black px-6 py-3 rounded-lg font-sans font-semibold hover:scale-105 transition-all duration-300 luxury-shadow-hover"
+                className="luxury-gradient text-black px-8 py-3 rounded-lg font-sans font-bold hover:scale-105 transition-all duration-300 luxury-shadow-hover"
               >
                 Start Shopping
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {cart.map(item => (
-                <div key={item.id} className="glass-morphism border-2 rounded-xl p-4 hover:border-gold transition-all duration-300 luxury-shadow" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-serif font-bold text-white">{item.name}</h3>
-                      <p className="text-sm font-sans" style={{ color: '#D4AF37' }}>{item.size}</p>
-                      <p className="font-bold mt-1 font-sans text-gradient">R{item.price}.00</p>
+            <div className="space-y-3">
+              {cart.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="glass-morphism border-2 rounded-xl p-3 hover:border-gold transition-all duration-300 luxury-shadow group animate-fadeIn"
+                  style={{
+                    borderColor: 'rgba(212, 175, 55, 0.3)',
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                >
+                  <div className="flex gap-3">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-black/40 border border-gold/20">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.src = '/Final.png';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gold/50">
+                          <ShoppingCart size={32} />
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-400 hover:text-red-300 transition-colors duration-300"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-800 transition-all duration-300 font-sans font-bold"
-                      style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
-                    >
-                      -
-                    </button>
-                    <span className="w-12 text-center font-bold font-sans text-white">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-8 border-2 rounded-lg hover:bg-neutral-800 transition-all duration-300 font-sans font-bold"
-                      style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
-                    >
-                      +
-                    </button>
+
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-serif font-bold text-white text-sm leading-tight pr-2 line-clamp-2">{item.name}</h3>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-red-400 hover:text-red-300 hover:scale-110 transition-all duration-300 flex-shrink-0"
+                          title="Remove from cart"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <p className="text-xs font-sans text-gray-400 mb-2">{item.size}</p>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 bg-black/40 rounded-lg p-1">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="w-7 h-7 border border-gold/50 rounded-md hover:bg-gold/20 transition-all duration-300 font-sans font-bold text-gold flex items-center justify-center"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="w-8 text-center font-bold font-sans text-white text-sm">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="w-7 h-7 border border-gold/50 rounded-md hover:bg-gold/20 transition-all duration-300 font-sans font-bold text-gold flex items-center justify-center"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold font-sans text-gradient text-sm">R{(item.price * item.quantity).toFixed(2)}</p>
+                          {item.quantity > 1 && (
+                            <p className="text-xs text-gray-500">R{item.price} each</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -5481,44 +5598,64 @@ const App = () => {
           )}
         </div>
 
+        {/* Enhanced Cart Footer */}
         {cart.length > 0 && (
-          <div className="border-t-2 p-6 space-y-4 bg-black" style={{ borderColor: '#D4AF37' }}>
-            <div className="flex justify-between items-center">
+          <div className="border-t-2 p-6 space-y-4 bg-gradient-to-b from-neutral-900 to-black" style={{ borderColor: '#D4AF37' }}>
+            {/* Subtotal Breakdown */}
+            <div className="space-y-2 pb-4 border-b border-gold/20">
+              <div className="flex justify-between items-center text-sm font-sans">
+                <span className="text-gray-400">Subtotal ({getTotalItems()} items)</span>
+                <span className="text-white font-semibold">R{getTotalPrice().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-sans">
+                <span className="text-gray-400">Delivery</span>
+                <span className="text-green-400 font-semibold">FREE</span>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between items-center py-2">
+              <span className="text-2xl font-serif font-bold text-white">Total:</span>
+              <span className="text-3xl font-serif font-bold text-gradient">R{getTotalPrice().toFixed(2)}</span>
+            </div>
+
+            {/* Checkout Buttons */}
+            <div className="space-y-3">
               <button
-                onClick={() => setCartOpen(false)}
-                className="text-sm font-sans underline hover:no-underline transition-all duration-300"
-                style={{ color: '#D4AF37' }}
+                onClick={handleWhatsAppCheckout}
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 font-sans font-bold hover:from-green-700 hover:to-green-800 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 luxury-shadow-hover rounded-xl group"
               >
-                Continue Shopping
+                <Phone size={22} className="group-hover:rotate-12 transition-transform duration-300" />
+                <span>Order via WhatsApp</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  // Peach Payments integration will go here
+                  addToast('Peach Payments integration coming soon! Please use WhatsApp checkout.', 'info', 4000);
+                }}
+                className="w-full luxury-gradient text-black py-4 font-sans font-bold hover:scale-105 transition-all duration-300 animate-shimmer luxury-shadow-hover rounded-xl"
+              >
+                💳 Pay Online with Peach Payments
               </button>
             </div>
 
-            <div className="flex justify-between items-center text-xl font-bold font-serif">
-              <span className="text-white">Total:</span>
-              <span className="text-gradient">R{getTotalPrice()}.00</span>
+            {/* Continue Shopping Link */}
+            <button
+              onClick={() => setCartOpen(false)}
+              className="w-full text-sm font-sans text-gold hover:text-gold-light transition-all duration-300 flex items-center justify-center gap-2 py-2"
+            >
+              <ChevronRight size={16} className="rotate-180" />
+              Continue Shopping
+            </button>
+
+            {/* Security Badge */}
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 font-sans pt-2">
+              <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              </div>
+              <span>Secure Checkout • Free Delivery</span>
             </div>
-
-            <button
-              onClick={handleWhatsAppCheckout}
-              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 font-sans font-semibold hover:from-green-700 hover:to-green-800 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 luxury-shadow-hover rounded-lg"
-            >
-              <Phone size={20} />
-              <span>Order via WhatsApp</span>
-            </button>
-
-            <button
-              onClick={() => {
-                // Peach Payments integration will go here
-                addToast('Peach Payments integration coming soon! Please use WhatsApp checkout.', 'info', 4000);
-              }}
-              className="w-full luxury-gradient text-black py-4 font-sans font-semibold hover:scale-105 transition-all duration-300 animate-glow luxury-shadow-hover rounded-lg"
-            >
-              Pay Online with Peach Payments
-            </button>
-
-            <p className="text-xs text-center font-sans" style={{ color: '#D4AF37' }}>
-              Secure payment processing available
-            </p>
           </div>
         )}
       </div>
