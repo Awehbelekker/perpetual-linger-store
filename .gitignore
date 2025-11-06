@@ -1,1 +1,4 @@
 .vercel
+
+# Google OAuth Credentials (keep secure)
+google-oauth-credentials.json
