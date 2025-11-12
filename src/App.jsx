@@ -1054,6 +1054,7 @@ const App = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminTab, setAdminTab] = useState('analytics'); // Track admin tab separately
   const [toasts, setToasts] = useState([]);
   const [wishlist, setWishlist] = useState(() => {
     const savedWishlist = localStorage.getItem('perpetualLingerWishlist');
@@ -2819,10 +2820,12 @@ const App = () => {
       }
 
       console.log('Initializing Google OAuth with Client ID:', GOOGLE_CLIENT_ID);
+      console.log('Current URL:', window.location.href);
 
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.file',
+        ux_mode: 'popup', // Use popup mode instead of redirect
         callback: async (response) => {
           console.log('OAuth callback received:', response);
 
@@ -4614,7 +4617,6 @@ const App = () => {
   );
 
   const AdminPanel = () => {
-    const [adminTab, setAdminTab] = useState('analytics'); // Default to analytics dashboard
     const [newProduct, setNewProduct] = useState({
       name: '',
       category: '',
