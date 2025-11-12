@@ -2838,7 +2838,8 @@ const App = () => {
       const validOrigins = [
         'http://localhost:5173',
         'https://perpetual-linger-store.vercel.app',
-        'https://perpetuallinger.co.za'
+        'https://perpetuallinger.co.za',
+        'https://www.perpetuallinger.co.za'
       ];
       const currentOrigin = window.location.origin;
       const isValidOrigin = validOrigins.includes(currentOrigin);
@@ -2854,6 +2855,7 @@ const App = () => {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.file',
+        ux_mode: 'popup',
         callback: async (response) => {
           console.log('📥 OAuth callback received:', response);
 
