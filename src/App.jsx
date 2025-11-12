@@ -2807,91 +2807,11 @@ const App = () => {
     }
   };
 
-  // Enhanced OAuth 2.0 Authentication with Better Error Handling
+  // SIMPLIFIED: Manual Image URL Management (Google Drive OAuth has persistent 400 errors)
   const authenticateGoogleDrive = () => {
-    setIsAuthenticating(true);
-
-    try {
-      // Check if Google Identity Services is loaded
-      if (!window.google || !window.google.accounts) {
-        console.error('Google Identity Services not loaded');
-        addToast('❌ Google services not loaded. Please refresh the page.', 'error');
-        setIsAuthenticating(false);
-        return;
-      }
-
-      console.log('Initializing Google OAuth with Client ID:', GOOGLE_CLIENT_ID);
-      console.log('Current URL:', window.location.href);
-
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        prompt: '', // Empty string for normal flow (not 'consent' which can cause issues)
-        callback: async (response) => {
-          console.log('OAuth callback received:', response);
-
-          if (response.error) {
-            console.error('OAuth error in callback:', response.error);
-            addToast(`❌ Authentication error: ${response.error}`, 'error');
-            setIsAuthenticating(false);
-            return;
-          }
-
-          if (response.access_token) {
-            console.log('Access token received successfully');
-
-            // Calculate token expiration (typically 1 hour)
-            const expiresAt = Date.now() + (response.expires_in || 3600) * 1000;
-
-            // Save access token and expiration
-            setGoogleDriveConfig(prev => ({
-              ...prev,
-              accessToken: response.access_token,
-              expiresAt: expiresAt,
-              authenticated: true
-            }));
-
-            try {
-              // Try to find or create the content file
-              await findOrCreateContentFile(response.access_token);
-
-              // Fetch image library
-              await fetchImagesFromGoogleDrive();
-
-              addToast('✅ Successfully connected to Google Drive!', 'success');
-            } catch (error) {
-              console.error('Error after authentication:', error);
-              addToast('⚠️ Connected but failed to load data. Try refreshing.', 'warning');
-            }
-
-            setIsAuthenticating(false);
-          } else {
-            console.error('No access token in response');
-            addToast('❌ Authentication failed - no access token', 'error');
-            setIsAuthenticating(false);
-          }
-        },
-        error_callback: (error) => {
-          console.error('OAuth error callback:', error);
-          addToast(`❌ Authentication error: ${error.type || 'Unknown error'}`, 'error');
-          setIsAuthenticating(false);
-        }
-      });
-
-      console.log('Requesting access token...');
-      console.log('Client configuration:', {
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        origin: window.location.origin
-      });
-
-      // Request token with explicit prompt parameter
-      client.requestAccessToken({ prompt: '' });
-    } catch (error) {
-      console.error('Error initializing OAuth:', error);
-      addToast(`❌ Failed to initialize: ${error.message}`, 'error');
-      setIsAuthenticating(false);
-    }
+    // Instead of OAuth, we'll use a simple manual approach
+    addToast('ℹ️ Google Drive OAuth is currently disabled due to API configuration issues. Please use direct image URLs instead.', 'info');
+    setIsAuthenticating(false);
   };
 
   // Disconnect from Google Drive
@@ -7897,19 +7817,25 @@ const App = () => {
                   </div>
                 </div>
 
-                {!googleDriveConfig.authenticated ? (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🔒</div>
-                    <h3 className="text-xl font-bold text-white mb-2">Google Drive Not Connected</h3>
-                    <p className="text-gray-400 mb-6">Connect Google Drive to access your image library</p>
-                    <button
-                      onClick={() => setAdminTab('settings')}
-                      className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all font-semibold"
-                    >
-                      Go to Settings
-                    </button>
-                  </div>
-                ) : loadingImages ? (
+                {/* Simplified Image Management - No OAuth Required */}
+                <div className="bg-blue-900/20 border-2 border-blue-600 rounded-xl p-6 mb-6">
+                  <h3 className="font-bold text-blue-400 mb-3">ℹ️ Image Management</h3>
+                  <p className="text-sm text-blue-200 mb-4">
+                    Google Drive OAuth is currently disabled due to API configuration issues.
+                    Use one of these alternatives:
+                  </p>
+                  <ul className="list-disc list-inside space-y-2 text-sm text-blue-200">
+                    <li><strong>ImgBB:</strong> Free image hosting - <a href="https://imgbb.com/" target="_blank" className="text-blue-400 underline">imgbb.com</a></li>
+                    <li><strong>Imgur:</strong> Popular image host - <a href="https://imgur.com/" target="_blank" className="text-blue-400 underline">imgur.com</a></li>
+                    <li><strong>Cloudinary:</strong> Professional CDN - <a href="https://cloudinary.com/" target="_blank" className="text-blue-400 underline">cloudinary.com</a></li>
+                    <li><strong>Your own hosting:</strong> Upload to your web server</li>
+                  </ul>
+                  <p className="text-xs text-blue-300 mt-4">
+                    💡 <strong>Tip:</strong> Upload your image, copy the direct URL, and paste it into the product image field.
+                  </p>
+                </div>
+
+                {loadingImages ? (
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">⏳</div>
                     <p className="text-white font-semibold">Loading images from Google Drive...</p>
@@ -8375,27 +8301,37 @@ const App = () => {
                       )}
                     </button>
 
-                    {/* Simple Instructions */}
-                    <div className="bg-blue-900/20 border-2 border-blue-600 rounded-xl p-6">
-                      <h4 className="font-bold text-blue-400 mb-3">📝 How to Connect:</h4>
-                      <ol className="list-decimal list-inside space-y-2 text-sm text-blue-200">
-                        <li>Click the "Connect Google Drive" button above</li>
-                        <li>Sign in with your Google account</li>
-                        <li>Grant permission to access Google Drive</li>
-                        <li>Done! Your content will auto-sync</li>
-                      </ol>
+                    {/* OAuth Currently Disabled */}
+                    <div className="bg-red-900/20 border-2 border-red-600 rounded-xl p-6">
+                      <h4 className="font-bold text-red-400 mb-3">⚠️ Google Drive OAuth Temporarily Disabled</h4>
+                      <p className="text-sm text-red-200 mb-4">
+                        Due to persistent 400 errors with Google's OAuth API, the Google Drive integration is currently disabled.
+                      </p>
+                      <p className="text-sm text-red-200 mb-4">
+                        <strong>Alternative Solutions:</strong>
+                      </p>
+                      <ul className="list-disc list-inside space-y-2 text-sm text-red-200">
+                        <li><strong>ImgBB:</strong> Free image hosting - <a href="https://imgbb.com/" target="_blank" className="text-red-400 underline">imgbb.com</a></li>
+                        <li><strong>Imgur:</strong> Popular image host - <a href="https://imgur.com/" target="_blank" className="text-red-400 underline">imgur.com</a></li>
+                        <li><strong>Cloudinary:</strong> Professional CDN - <a href="https://cloudinary.com/" target="_blank" className="text-red-400 underline">cloudinary.com</a></li>
+                      </ul>
+                      <p className="text-xs text-red-300 mt-4">
+                        💡 <strong>How to use:</strong> Upload your images to one of these services, copy the direct URL, and paste it into the product image field.
+                      </p>
                     </div>
 
-                    {/* Troubleshooting */}
-                    <div className="bg-yellow-900/20 border-2 border-yellow-600 rounded-xl p-6">
-                      <h4 className="font-bold text-yellow-400 mb-3">⚠️ Getting 400 Error?</h4>
-                      <p className="text-sm text-yellow-200 mb-2">Make sure Google Drive API is enabled:</p>
-                      <ol className="list-decimal list-inside space-y-2 text-xs text-yellow-200">
-                        <li>Go to: <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=rosy-dynamics-477308-t2" target="_blank" className="text-yellow-400 underline">Enable Drive API</a></li>
-                        <li>Click "Enable" button</li>
-                        <li>Wait 1-2 minutes for changes to propagate</li>
-                        <li>Try connecting again</li>
-                      </ol>
+                    {/* Technical Details (for debugging) */}
+                    <div className="bg-gray-900/50 border-2 border-gray-600 rounded-xl p-4">
+                      <details className="text-gray-400 text-xs">
+                        <summary className="cursor-pointer font-semibold mb-2">🔧 Technical Details (for developers)</summary>
+                        <div className="space-y-1 pl-4">
+                          <p><strong>Error:</strong> 400 Bad Request from Google OAuth</p>
+                          <p><strong>Project ID:</strong> rosy-dynamics-477308-t2</p>
+                          <p><strong>Client ID:</strong> 147864566465-4np9e1gp28gj14vg5t5mv1uhp1osou0r.apps.googleusercontent.com</p>
+                          <p><strong>Issue:</strong> OAuth consent screen or API configuration problem</p>
+                          <p><strong>Next Steps:</strong> Enable Google Drive API, configure OAuth consent screen, add test users</p>
+                        </div>
+                      </details>
                     </div>
                   </div>
                 )}
