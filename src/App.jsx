@@ -2824,6 +2824,32 @@ const App = () => {
       console.log('📋 Client ID:', GOOGLE_CLIENT_ID);
       console.log('🌐 Current URL:', window.location.href);
       console.log('🔗 Origin:', window.location.origin);
+      console.log('🔗 Protocol:', window.location.protocol);
+      console.log('🔗 Hostname:', window.location.hostname);
+      console.log('🔗 Port:', window.location.port);
+
+      // Pre-flight checks
+      console.log('✅ Pre-flight checks:');
+      console.log('  - Google library loaded:', !!window.google);
+      console.log('  - OAuth2 available:', !!window.google?.accounts?.oauth2);
+      console.log('  - Client ID valid:', GOOGLE_CLIENT_ID.includes('apps.googleusercontent.com'));
+
+      // Check if we're on a valid origin
+      const validOrigins = [
+        'http://localhost:5173',
+        'https://perpetual-linger-store.vercel.app',
+        'https://perpetuallinger.co.za'
+      ];
+      const currentOrigin = window.location.origin;
+      const isValidOrigin = validOrigins.includes(currentOrigin);
+
+      console.log('  - Current origin valid:', isValidOrigin);
+      if (!isValidOrigin) {
+        console.warn('⚠️ WARNING: Current origin not in authorized list!');
+        console.warn('  Current:', currentOrigin);
+        console.warn('  Authorized:', validOrigins);
+        addToast('⚠️ Warning: This domain may not be authorized. OAuth might fail.', 'warning');
+      }
 
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
@@ -2875,20 +2901,44 @@ const App = () => {
         },
         error_callback: (error) => {
           console.error('❌ OAuth error callback triggered');
-          console.error('📄 Error object:', JSON.stringify(error, null, 2));
-          console.error('📄 Error type:', error.type);
-          console.error('📄 Error message:', error.message);
+          console.error('📄 Full error object:', error);
+          console.error('📄 Error stringified:', JSON.stringify(error, null, 2));
+          console.error('📄 Error type:', error?.type);
+          console.error('📄 Error message:', error?.message);
+          console.error('📄 Error code:', error?.code);
+          console.error('📄 Error details:', error?.details);
+
+          // Log all properties of the error object
+          console.error('📄 All error properties:');
+          for (let key in error) {
+            console.error(`  - ${key}:`, error[key]);
+          }
 
           let errorMessage = 'Authentication error';
+          let troubleshooting = '';
+
           if (error.type === 'popup_closed') {
             errorMessage = 'Popup was closed before completing sign-in';
+            troubleshooting = 'Please try again and complete the sign-in process.';
           } else if (error.type === 'access_denied') {
             errorMessage = 'Access was denied. Please grant permissions.';
+            troubleshooting = 'Make sure to click "Allow" when Google asks for permissions.';
+          } else if (error.type === 'popup_failed_to_open') {
+            errorMessage = 'Popup was blocked by browser';
+            troubleshooting = 'Please allow popups for this site and try again.';
           } else if (error.message) {
             errorMessage = error.message;
           }
 
+          console.error('🔍 Troubleshooting:', troubleshooting);
           addToast(`❌ ${errorMessage}`, 'error');
+
+          if (troubleshooting) {
+            setTimeout(() => {
+              addToast(`💡 ${troubleshooting}`, 'info');
+            }, 2000);
+          }
+
           setIsAuthenticating(false);
         }
       });
@@ -2900,8 +2950,17 @@ const App = () => {
         origin: window.location.origin
       });
 
-      // Request token
-      client.requestAccessToken();
+      // Request token with additional error handling
+      try {
+        console.log('🎯 Calling client.requestAccessToken()...');
+        client.requestAccessToken();
+        console.log('✅ requestAccessToken() called successfully');
+      } catch (requestError) {
+        console.error('💥 Error calling requestAccessToken():', requestError);
+        console.error('📄 Request error details:', JSON.stringify(requestError, null, 2));
+        addToast(`❌ Failed to request token: ${requestError.message}`, 'error');
+        setIsAuthenticating(false);
+      }
     } catch (error) {
       console.error('💥 Error initializing OAuth:', error);
       console.error('📄 Error stack:', error.stack);
@@ -8397,35 +8456,87 @@ const App = () => {
                       )}
                     </button>
 
-                    {/* OAuth Currently Disabled */}
-                    <div className="bg-red-900/20 border-2 border-red-600 rounded-xl p-6">
-                      <h4 className="font-bold text-red-400 mb-3">⚠️ Google Drive OAuth Temporarily Disabled</h4>
-                      <p className="text-sm text-red-200 mb-4">
-                        Due to persistent 400 errors with Google's OAuth API, the Google Drive integration is currently disabled.
+                    {/* Setup Instructions */}
+                    <div className="bg-blue-900/20 border-2 border-blue-600 rounded-xl p-6">
+                      <h4 className="font-bold text-blue-400 mb-3">📝 Setup Required (One-Time)</h4>
+                      <p className="text-sm text-blue-200 mb-4">
+                        Before connecting, you must enable the Google Drive API:
                       </p>
-                      <p className="text-sm text-red-200 mb-4">
-                        <strong>Alternative Solutions:</strong>
-                      </p>
-                      <ul className="list-disc list-inside space-y-2 text-sm text-red-200">
-                        <li><strong>ImgBB:</strong> Free image hosting - <a href="https://imgbb.com/" target="_blank" className="text-red-400 underline">imgbb.com</a></li>
-                        <li><strong>Imgur:</strong> Popular image host - <a href="https://imgur.com/" target="_blank" className="text-red-400 underline">imgur.com</a></li>
-                        <li><strong>Cloudinary:</strong> Professional CDN - <a href="https://cloudinary.com/" target="_blank" className="text-red-400 underline">cloudinary.com</a></li>
-                      </ul>
-                      <p className="text-xs text-red-300 mt-4">
-                        💡 <strong>How to use:</strong> Upload your images to one of these services, copy the direct URL, and paste it into the product image field.
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-blue-200 mb-4">
+                        <li>
+                          <a
+                            href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=rosy-dynamics-477308-t2"
+                            target="_blank"
+                            className="text-blue-400 underline font-semibold"
+                          >
+                            Click here to enable Google Drive API
+                          </a>
+                        </li>
+                        <li>Click the "ENABLE" button</li>
+                        <li>Wait 2-3 minutes for changes to take effect</li>
+                        <li>Come back and click "Connect Google Drive" above</li>
+                      </ol>
+                      <p className="text-xs text-blue-300">
+                        💡 <strong>Tip:</strong> Open your browser console (F12) to see detailed error messages if connection fails.
                       </p>
                     </div>
 
-                    {/* Technical Details (for debugging) */}
+                    {/* Troubleshooting */}
+                    <div className="bg-yellow-900/20 border-2 border-yellow-600 rounded-xl p-6">
+                      <h4 className="font-bold text-yellow-400 mb-3">🔧 Still Getting Errors?</h4>
+                      <details className="text-yellow-200 text-sm">
+                        <summary className="cursor-pointer font-semibold mb-3">Click to see troubleshooting steps</summary>
+                        <div className="space-y-3 pl-4">
+                          <div>
+                            <p className="font-semibold">Error: "_.Uj" or 400 Bad Request</p>
+                            <ul className="list-disc list-inside text-xs mt-1 space-y-1">
+                              <li>Make sure Google Drive API is enabled (step 1 above)</li>
+                              <li>
+                                <a
+                                  href="https://console.cloud.google.com/apis/credentials/consent?project=rosy-dynamics-477308-t2"
+                                  target="_blank"
+                                  className="text-yellow-400 underline"
+                                >
+                                  Configure OAuth consent screen
+                                </a>
+                              </li>
+                              <li>Add your email as a test user if app is in "Testing" mode</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Error: "popup_blocked"</p>
+                            <ul className="list-disc list-inside text-xs mt-1">
+                              <li>Allow popups for this website in your browser settings</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Error: "redirect_uri_mismatch"</p>
+                            <ul className="list-disc list-inside text-xs mt-1">
+                              <li>
+                                <a
+                                  href="https://console.cloud.google.com/apis/credentials?project=rosy-dynamics-477308-t2"
+                                  target="_blank"
+                                  className="text-yellow-400 underline"
+                                >
+                                  Check OAuth client authorized origins
+                                </a>
+                              </li>
+                              <li>Make sure {window.location.origin} is in the list</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+
+                    {/* Configuration Info */}
                     <div className="bg-gray-900/50 border-2 border-gray-600 rounded-xl p-4">
                       <details className="text-gray-400 text-xs">
-                        <summary className="cursor-pointer font-semibold mb-2">🔧 Technical Details (for developers)</summary>
-                        <div className="space-y-1 pl-4">
-                          <p><strong>Error:</strong> 400 Bad Request from Google OAuth</p>
+                        <summary className="cursor-pointer font-semibold mb-2">📋 Configuration Details</summary>
+                        <div className="space-y-1 pl-4 font-mono">
                           <p><strong>Project ID:</strong> rosy-dynamics-477308-t2</p>
-                          <p><strong>Client ID:</strong> 147864566465-4np9e1gp28gj14vg5t5mv1uhp1osou0r.apps.googleusercontent.com</p>
-                          <p><strong>Issue:</strong> OAuth consent screen or API configuration problem</p>
-                          <p><strong>Next Steps:</strong> Enable Google Drive API, configure OAuth consent screen, add test users</p>
+                          <p><strong>Client ID:</strong> {GOOGLE_CLIENT_ID}</p>
+                          <p><strong>Current Origin:</strong> {window.location.origin}</p>
+                          <p><strong>Scope:</strong> https://www.googleapis.com/auth/drive.file</p>
                         </div>
                       </details>
                     </div>
