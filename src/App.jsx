@@ -848,6 +848,197 @@ const ContentBlockRenderer = ({ block, allProducts, previewMode = false }) => {
         </div>
       );
 
+    case 'video':
+      const getVideoEmbedUrl = (url) => {
+        if (!url) return '';
+
+        // YouTube
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+          const videoId = url.includes('youtu.be')
+            ? url.split('youtu.be/')[1]?.split('?')[0]
+            : url.split('v=')[1]?.split('&')[0];
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+
+        // Vimeo
+        if (url.includes('vimeo.com')) {
+          const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+          return `https://player.vimeo.com/video/${videoId}`;
+        }
+
+        return url;
+      };
+
+      return (
+        <div className="glass-morphism rounded-xl p-6 md:p-8 mb-8 luxury-shadow">
+          {block.title && (
+            <h3 className="text-2xl md:text-3xl font-bold text-gradient mb-4 text-center">{block.title}</h3>
+          )}
+          {block.description && (
+            <p className="text-gray-300 text-center mb-6">{block.description}</p>
+          )}
+          {block.videoUrl ? (
+            <div className="relative" style={{ paddingBottom: block.aspectRatio === '16:9' ? '56.25%' : '75%' }}>
+              <iframe
+                src={getVideoEmbedUrl(block.videoUrl)}
+                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="bg-black/30 rounded-lg p-12 text-center border-2 border-dashed border-gold/30">
+              <div className="text-6xl mb-4">🎥</div>
+              <p className="text-gray-400">Add a video URL to display content</p>
+            </div>
+          )}
+        </div>
+      );
+
+    case 'testimonial':
+      return (
+        <div className="glass-morphism rounded-xl p-8 md:p-10 mb-8 luxury-shadow" style={{ background: getBackgroundColor(block.backgroundColor) }}>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            {block.image && (
+              <img src={block.image} alt={block.author} className="w-20 h-20 rounded-full object-cover border-4 border-gold" />
+            )}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex justify-center md:justify-start mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`text-2xl ${i < block.rating ? 'text-gold' : 'text-gray-600'}`}>★</span>
+                ))}
+              </div>
+              <p className="text-lg md:text-xl italic mb-4" style={{ color: getTextColor(block.textColor) }}>
+                "{block.quote}"
+              </p>
+              <div>
+                <p className="font-bold text-gradient text-lg">{block.author}</p>
+                <p className="text-sm text-gray-400">{block.role}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'countdown':
+      const CountdownTimer = ({ endDate, endTime }) => {
+        const [timeLeft, setTimeLeft] = React.useState({});
+
+        React.useEffect(() => {
+          const calculateTimeLeft = () => {
+            const targetDate = new Date(`${endDate}T${endTime || '23:59'}:00`);
+            const difference = targetDate - new Date();
+
+            if (difference > 0) {
+              return {
+                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                minutes: Math.floor((difference / 1000 / 60) % 60),
+                seconds: Math.floor((difference / 1000) % 60)
+              };
+            }
+            return null;
+          };
+
+          const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+          }, 1000);
+
+          setTimeLeft(calculateTimeLeft());
+          return () => clearInterval(timer);
+        }, [endDate, endTime]);
+
+        if (!timeLeft) {
+          return <p className="text-2xl font-bold">{block.expiredMessage}</p>;
+        }
+
+        return (
+          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
+            {Object.entries(timeLeft).map(([unit, value]) => (
+              <div key={unit} className="bg-black/40 rounded-lg p-4 text-center">
+                <div className="text-3xl md:text-4xl font-bold text-gradient">{value}</div>
+                <div className="text-xs md:text-sm text-gray-400 uppercase mt-1">{unit}</div>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      return (
+        <div className="glass-morphism rounded-xl p-8 md:p-10 mb-8 luxury-shadow text-center" style={{ background: getBackgroundColor(block.backgroundColor) }}>
+          {block.title && (
+            <h3 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: getTextColor(block.textColor) }}>{block.title}</h3>
+          )}
+          {block.message && (
+            <p className="text-lg mb-6" style={{ color: getTextColor(block.textColor) }}>{block.message}</p>
+          )}
+          <CountdownTimer endDate={block.endDate} endTime={block.endTime} />
+        </div>
+      );
+
+    case 'faq':
+      const FAQItem = ({ question, answer, index }) => {
+        const [isOpen, setIsOpen] = React.useState(false);
+
+        return (
+          <div className="border-b border-gold/20 last:border-0">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="w-full py-4 px-6 flex justify-between items-center hover:bg-gold/5 transition-all"
+            >
+              <span className="font-semibold text-left text-white">{question}</span>
+              <span className="text-gold text-2xl transform transition-transform" style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0)' }}>+</span>
+            </button>
+            {isOpen && (
+              <div className="px-6 pb-4 text-gray-300 animate-fadeIn">
+                {answer}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      return (
+        <div className="glass-morphism rounded-xl p-6 md:p-8 mb-8 luxury-shadow">
+          {block.title && (
+            <h3 className="text-2xl md:text-3xl font-bold text-gradient mb-6 text-center">{block.title}</h3>
+          )}
+          <div className="space-y-0">
+            {block.items?.map((item, index) => (
+              <FAQItem key={index} question={item.question} answer={item.answer} index={index} />
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'gallery':
+      return (
+        <div className="glass-morphism rounded-xl p-6 md:p-8 mb-8 luxury-shadow">
+          {block.title && (
+            <h3 className="text-2xl md:text-3xl font-bold text-gradient mb-6 text-center">{block.title}</h3>
+          )}
+          {block.images && block.images.length > 0 ? (
+            <div className={`grid gap-${block.spacing === 'small' ? '2' : block.spacing === 'large' ? '6' : '4'} grid-cols-1 md:grid-cols-${block.columns || 3}`}>
+              {block.images.map((img, index) => (
+                <div key={index} className="relative group overflow-hidden rounded-lg cursor-pointer hover:scale-105 transition-transform">
+                  <img src={img.url} alt={img.alt || `Gallery image ${index + 1}`} className="w-full h-64 object-cover" />
+                  {img.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-3 text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                      {img.caption}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-black/30 rounded-lg p-12 text-center border-2 border-dashed border-gold/30">
+              <div className="text-6xl mb-4">🖼️</div>
+              <p className="text-gray-400">Add images to create a gallery</p>
+            </div>
+          )}
+        </div>
+      );
+
     default:
       return null;
   }
@@ -1896,6 +2087,68 @@ const App = () => {
           borderColor: 'transparent',
           borderWidth: '0',
           iconEmoji: '',
+          ...commonStyles
+        };
+      case 'video':
+        return {
+          videoUrl: '',
+          title: 'Watch Our Video',
+          description: 'Learn more about our products',
+          autoplay: false,
+          controls: true,
+          aspectRatio: '16:9',
+          ...commonStyles
+        };
+      case 'testimonial':
+        return {
+          quote: 'This product changed my life! The quality is amazing and the scent lasts all day.',
+          author: 'Sarah Johnson',
+          role: 'Verified Customer',
+          rating: 5,
+          image: '',
+          backgroundColor: 'black',
+          textColor: 'white',
+          ...commonStyles
+        };
+      case 'countdown':
+        return {
+          title: 'Limited Time Offer!',
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          endTime: '23:59',
+          message: 'Hurry! Sale ends in:',
+          expiredMessage: 'Offer has ended!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          ...commonStyles
+        };
+      case 'faq':
+        return {
+          title: 'Frequently Asked Questions',
+          items: [
+            {
+              question: 'What are replica fragrances?',
+              answer: 'Our replica fragrances are high-quality alternatives to designer perfumes, offering similar scents at affordable prices.'
+            },
+            {
+              question: 'How long do the fragrances last?',
+              answer: 'Our fragrances typically last 6-8 hours, depending on skin type and application.'
+            },
+            {
+              question: 'Do you offer free shipping?',
+              answer: 'Yes! We offer free shipping on orders over R500.'
+            }
+          ],
+          backgroundColor: 'transparent',
+          textColor: 'white',
+          ...commonStyles
+        };
+      case 'gallery':
+        return {
+          title: 'Our Collection',
+          images: [],
+          columns: 3,
+          spacing: 'medium',
+          lightbox: true,
           ...commonStyles
         };
       default:
@@ -5757,6 +6010,56 @@ const App = () => {
                           <h4 className="font-bold text-white text-sm font-sans">Text Block</h4>
                           <p className="text-xs text-gray-400 mt-1">Custom content</p>
                         </button>
+                        <button
+                          onClick={() => addContentBlock('video')}
+                          onMouseEnter={() => showInsertionPreview('video', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
+                        >
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🎥</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Video</h4>
+                          <p className="text-xs text-gray-400 mt-1">YouTube/Vimeo</p>
+                        </button>
+                        <button
+                          onClick={() => addContentBlock('testimonial')}
+                          onMouseEnter={() => showInsertionPreview('testimonial', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
+                        >
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">💬</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Testimonial</h4>
+                          <p className="text-xs text-gray-400 mt-1">Customer reviews</p>
+                        </button>
+                        <button
+                          onClick={() => addContentBlock('countdown')}
+                          onMouseEnter={() => showInsertionPreview('countdown', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
+                        >
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">⏰</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Countdown</h4>
+                          <p className="text-xs text-gray-400 mt-1">Timer widget</p>
+                        </button>
+                        <button
+                          onClick={() => addContentBlock('faq')}
+                          onMouseEnter={() => showInsertionPreview('faq', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
+                        >
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">❓</div>
+                          <h4 className="font-bold text-white text-sm font-sans">FAQ</h4>
+                          <p className="text-xs text-gray-400 mt-1">Q&A accordion</p>
+                        </button>
+                        <button
+                          onClick={() => addContentBlock('gallery')}
+                          onMouseEnter={() => showInsertionPreview('gallery', siteContent.contentBlocks.length)}
+                          onMouseLeave={() => setInsertionPosition(null)}
+                          className="glass-morphism p-4 rounded-lg hover:scale-110 hover:shadow-xl transition-all duration-300 text-center group border-2 border-transparent hover:border-gold"
+                        >
+                          <div className="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🖼️</div>
+                          <h4 className="font-bold text-white text-sm font-sans">Gallery</h4>
+                          <p className="text-xs text-gray-400 mt-1">Image grid</p>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -6072,6 +6375,51 @@ const App = () => {
                     <div className="text-3xl mb-2">📝</div>
                     <h3 className="font-bold text-white text-sm font-sans">Text Block</h3>
                   </button>
+
+                  <button
+                    onClick={() => addContentBlock('video')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🎥</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Video</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('testimonial')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">💬</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Testimonial</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('countdown')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">⏰</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Countdown</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('faq')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">❓</div>
+                    <h3 className="font-bold text-white text-sm font-sans">FAQ</h3>
+                  </button>
+
+                  <button
+                    onClick={() => addContentBlock('gallery')}
+                    className="glass-morphism p-4 rounded-lg hover:scale-105 transition-all duration-300 text-center"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🖼️</div>
+                    <h3 className="font-bold text-white text-sm font-sans">Gallery</h3>
+                  </button>
                 </div>
               </div>
 
@@ -6098,6 +6446,11 @@ const App = () => {
                               {block.type === 'featured-products' && '⭐'}
                               {block.type === 'image' && '📸'}
                               {block.type === 'text' && '📝'}
+                              {block.type === 'video' && '🎥'}
+                              {block.type === 'testimonial' && '💬'}
+                              {block.type === 'countdown' && '⏰'}
+                              {block.type === 'faq' && '❓'}
+                              {block.type === 'gallery' && '🖼️'}
                             </span>
                             <div>
                               <h3 className="font-bold text-white font-sans">
@@ -6561,6 +6914,292 @@ const App = () => {
                                   className="w-full p-2 border-2 rounded-lg bg-black/30 text-white font-sans"
                                   style={{ borderColor: '#D4AF37' }}
                                 />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Video Editor */}
+                            {block.type === 'video' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Video title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.videoUrl}
+                                  onChange={(e) => updateContentBlock(block.id, { videoUrl: e.target.value })}
+                                  placeholder="YouTube or Vimeo URL"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <textarea
+                                  value={block.description}
+                                  onChange={(e) => updateContentBlock(block.id, { description: e.target.value })}
+                                  placeholder="Description (optional)"
+                                  rows="2"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Testimonial Editor */}
+                            {block.type === 'testimonial' && (
+                              <div className="space-y-3">
+                                <textarea
+                                  value={block.quote}
+                                  onChange={(e) => updateContentBlock(block.id, { quote: e.target.value })}
+                                  placeholder="Customer quote..."
+                                  rows="3"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.author}
+                                  onChange={(e) => updateContentBlock(block.id, { author: e.target.value })}
+                                  placeholder="Customer name"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.role}
+                                  onChange={(e) => updateContentBlock(block.id, { role: e.target.value })}
+                                  placeholder="Role (e.g., Verified Customer)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <div>
+                                  <label className="block text-sm text-white mb-1">Rating</label>
+                                  <select
+                                    value={block.rating}
+                                    onChange={(e) => updateContentBlock(block.id, { rating: parseInt(e.target.value) })}
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  >
+                                    {[5, 4, 3, 2, 1].map(num => (
+                                      <option key={num} value={num}>{num} Stars</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={block.image}
+                                  onChange={(e) => updateContentBlock(block.id, { image: e.target.value })}
+                                  placeholder="Image URL (optional)"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Countdown Editor */}
+                            {block.type === 'countdown' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Countdown title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <input
+                                  type="text"
+                                  value={block.message}
+                                  onChange={(e) => updateContentBlock(block.id, { message: e.target.value })}
+                                  placeholder="Message"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <div>
+                                  <label className="block text-sm text-white mb-1">End Date</label>
+                                  <input
+                                    type="date"
+                                    value={block.endDate}
+                                    onChange={(e) => updateContentBlock(block.id, { endDate: e.target.value })}
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm text-white mb-1">End Time</label>
+                                  <input
+                                    type="time"
+                                    value={block.endTime}
+                                    onChange={(e) => updateContentBlock(block.id, { endTime: e.target.value })}
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* FAQ Editor */}
+                            {block.type === 'faq' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="FAQ Section Title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                {block.items?.map((item, index) => (
+                                  <div key={index} className="bg-black/20 p-3 rounded-lg space-y-2">
+                                    <input
+                                      type="text"
+                                      value={item.question}
+                                      onChange={(e) => {
+                                        const newItems = [...block.items];
+                                        newItems[index].question = e.target.value;
+                                        updateContentBlock(block.id, { items: newItems });
+                                      }}
+                                      placeholder="Question"
+                                      className="w-full p-2 border rounded bg-black/30 text-white text-sm"
+                                      style={{ borderColor: '#D4AF37' }}
+                                    />
+                                    <textarea
+                                      value={item.answer}
+                                      onChange={(e) => {
+                                        const newItems = [...block.items];
+                                        newItems[index].answer = e.target.value;
+                                        updateContentBlock(block.id, { items: newItems });
+                                      }}
+                                      placeholder="Answer"
+                                      rows="2"
+                                      className="w-full p-2 border rounded bg-black/30 text-white text-sm"
+                                      style={{ borderColor: '#D4AF37' }}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const newItems = block.items.filter((_, i) => i !== index);
+                                        updateContentBlock(block.id, { items: newItems });
+                                      }}
+                                      className="text-red-400 text-sm hover:text-red-300"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => {
+                                    const newItems = [...(block.items || []), { question: '', answer: '' }];
+                                    updateContentBlock(block.id, { items: newItems });
+                                  }}
+                                  className="w-full bg-gold/20 text-gold py-2 rounded-lg font-semibold hover:bg-gold/30"
+                                >
+                                  + Add FAQ Item
+                                </button>
+                                <button
+                                  onClick={() => setEditingBlock(null)}
+                                  className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
+                                >
+                                  Done Editing
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Gallery Editor */}
+                            {block.type === 'gallery' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={block.title}
+                                  onChange={(e) => updateContentBlock(block.id, { title: e.target.value })}
+                                  placeholder="Gallery Title"
+                                  className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                  style={{ borderColor: '#D4AF37' }}
+                                />
+                                <div>
+                                  <label className="block text-sm text-white mb-1">Columns</label>
+                                  <select
+                                    value={block.columns}
+                                    onChange={(e) => updateContentBlock(block.id, { columns: parseInt(e.target.value) })}
+                                    className="w-full p-2 border-2 rounded-lg bg-black/30 text-white"
+                                    style={{ borderColor: '#D4AF37' }}
+                                  >
+                                    <option value="2">2 Columns</option>
+                                    <option value="3">3 Columns</option>
+                                    <option value="4">4 Columns</option>
+                                  </select>
+                                </div>
+                                {block.images?.map((img, index) => (
+                                  <div key={index} className="bg-black/20 p-3 rounded-lg space-y-2">
+                                    <input
+                                      type="text"
+                                      value={img.url}
+                                      onChange={(e) => {
+                                        const newImages = [...block.images];
+                                        newImages[index].url = e.target.value;
+                                        updateContentBlock(block.id, { images: newImages });
+                                      }}
+                                      placeholder="Image URL"
+                                      className="w-full p-2 border rounded bg-black/30 text-white text-sm"
+                                      style={{ borderColor: '#D4AF37' }}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={img.caption || ''}
+                                      onChange={(e) => {
+                                        const newImages = [...block.images];
+                                        newImages[index].caption = e.target.value;
+                                        updateContentBlock(block.id, { images: newImages });
+                                      }}
+                                      placeholder="Caption (optional)"
+                                      className="w-full p-2 border rounded bg-black/30 text-white text-sm"
+                                      style={{ borderColor: '#D4AF37' }}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const newImages = block.images.filter((_, i) => i !== index);
+                                        updateContentBlock(block.id, { images: newImages });
+                                      }}
+                                      className="text-red-400 text-sm hover:text-red-300"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => {
+                                    const newImages = [...(block.images || []), { url: '', caption: '' }];
+                                    updateContentBlock(block.id, { images: newImages });
+                                  }}
+                                  className="w-full bg-gold/20 text-gold py-2 rounded-lg font-semibold hover:bg-gold/30"
+                                >
+                                  + Add Image
+                                </button>
                                 <button
                                   onClick={() => setEditingBlock(null)}
                                   className="w-full luxury-gradient text-black py-2 rounded-lg font-semibold"
