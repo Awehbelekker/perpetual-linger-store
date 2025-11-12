@@ -2606,6 +2606,193 @@ const App = () => {
           productIds: ['elie-saab', 'gucci-bamboo', 'versace-eros', 'tom-ford'],
           columns: 4
         }
+      ],
+      'about-us': [
+        {
+          id: Date.now(),
+          type: 'text',
+          visible: true,
+          content: 'Welcome to Perpetual Linger - Your Destination for Luxury Replica Fragrances',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'video',
+          visible: true,
+          title: 'Our Story',
+          description: 'Discover how we bring luxury fragrances to South Africa',
+          videoUrl: '',
+          aspectRatio: '16:9'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'text',
+          visible: true,
+          content: 'At Perpetual Linger, we believe luxury should be accessible. Our expertly crafted replica fragrances capture the essence of designer scents at a fraction of the cost, without compromising on quality.',
+          fontSize: 'medium',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 3,
+          type: 'testimonial',
+          visible: true,
+          quote: 'The quality is absolutely incredible! I can\'t tell the difference from the original, and the price is unbeatable.',
+          author: 'Sarah M.',
+          role: 'Verified Customer',
+          rating: 5,
+          backgroundColor: 'black',
+          textColor: 'white'
+        }
+      ],
+      'customer-reviews': [
+        {
+          id: Date.now(),
+          type: 'text',
+          visible: true,
+          content: '⭐ What Our Customers Say ⭐',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'testimonial',
+          visible: true,
+          quote: 'Amazing quality! The scent lasts all day and smells exactly like the original. Will definitely order again!',
+          author: 'Thandi K.',
+          role: 'Johannesburg',
+          rating: 5,
+          backgroundColor: 'gold',
+          textColor: 'black'
+        },
+        {
+          id: Date.now() + 2,
+          type: 'testimonial',
+          visible: true,
+          quote: 'Fast delivery and excellent customer service. The fragrances are top-notch quality.',
+          author: 'Michael R.',
+          role: 'Cape Town',
+          rating: 5,
+          backgroundColor: 'black',
+          textColor: 'white'
+        },
+        {
+          id: Date.now() + 3,
+          type: 'testimonial',
+          visible: true,
+          quote: 'Best replica fragrances in SA! The packaging is beautiful and the scents are long-lasting.',
+          author: 'Lerato M.',
+          role: 'Durban',
+          rating: 5,
+          backgroundColor: 'gold',
+          textColor: 'black'
+        }
+      ],
+      'faq-page': [
+        {
+          id: Date.now(),
+          type: 'text',
+          visible: true,
+          content: '❓ Frequently Asked Questions',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'faq',
+          visible: true,
+          title: 'Everything You Need to Know',
+          items: [
+            {
+              question: 'What are replica fragrances?',
+              answer: 'Our replica fragrances are high-quality alternatives to designer perfumes, offering similar scents at affordable prices. They are expertly crafted to capture the essence of luxury fragrances.'
+            },
+            {
+              question: 'How long do the fragrances last?',
+              answer: 'Our fragrances typically last 6-8 hours, depending on skin type and application. For best results, apply to pulse points and moisturized skin.'
+            },
+            {
+              question: 'Do you offer free shipping?',
+              answer: 'Yes! We offer free shipping on all orders over R500 across South Africa.'
+            },
+            {
+              question: 'What is your return policy?',
+              answer: 'We offer a 30-day satisfaction guarantee. If you\'re not completely satisfied, contact us for a full refund or exchange.'
+            },
+            {
+              question: 'Are the fragrances safe to use?',
+              answer: 'Absolutely! All our fragrances are made with high-quality, skin-safe ingredients and comply with international safety standards.'
+            },
+            {
+              question: 'How do I apply perfume for best results?',
+              answer: 'Apply to pulse points (wrists, neck, behind ears) on moisturized skin. Don\'t rub - let it dry naturally for longer-lasting scent.'
+            }
+          ],
+          backgroundColor: 'transparent',
+          textColor: 'white'
+        }
+      ],
+      'flash-countdown': [
+        {
+          id: Date.now(),
+          type: 'countdown',
+          visible: true,
+          title: '⚡ FLASH SALE ENDING SOON! ⚡',
+          message: 'Don\'t miss out! Sale ends in:',
+          endDate: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString().split('T')[0],
+          endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toTimeString().slice(0, 5),
+          expiredMessage: 'Sale has ended! Check back for more deals.',
+          backgroundColor: 'red',
+          textColor: 'white'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'promo-banner',
+          visible: true,
+          title: '50% OFF EVERYTHING',
+          subtitle: 'Limited Time Only - Stock Up on Your Favorites!',
+          backgroundColor: 'gold',
+          textColor: 'black',
+          buttonText: 'Shop Now',
+          buttonLink: '#products',
+          showCountdown: false
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Flash Sale Highlights',
+          productIds: ['chanel-coco', 'dior-sauvage', 'bleu-chanel', 'dior-poison', 'pr-invictus', 'lancome-belle'],
+          columns: 3
+        }
+      ],
+      'product-showcase': [
+        {
+          id: Date.now(),
+          type: 'text',
+          visible: true,
+          content: '✨ Our Premium Collection ✨',
+          fontSize: 'large',
+          alignment: 'center'
+        },
+        {
+          id: Date.now() + 1,
+          type: 'gallery',
+          visible: true,
+          title: 'Luxury Fragrances Gallery',
+          images: [],
+          columns: 3,
+          spacing: 'medium',
+          lightbox: true
+        },
+        {
+          id: Date.now() + 2,
+          type: 'featured-products',
+          visible: true,
+          title: 'Best Sellers',
+          productIds: ['chanel-coco', 'dior-sauvage', 'bleu-chanel', 'armani-si'],
+          columns: 4
+        }
       ]
     };
 
@@ -6298,6 +6485,56 @@ const App = () => {
                     <div className="text-3xl mb-2">🌟</div>
                     <h3 className="font-bold text-white mb-2 font-sans">Limited Edition</h3>
                     <p className="text-sm text-gray-400 font-sans">Exclusive launch announcement</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('about-us')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">ℹ️</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">About Us</h3>
+                    <p className="text-sm text-gray-400 font-sans">Company story + video</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('customer-reviews')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">💬</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Customer Reviews</h3>
+                    <p className="text-sm text-gray-400 font-sans">Testimonials showcase</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('faq-page')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">❓</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">FAQ Page</h3>
+                    <p className="text-sm text-gray-400 font-sans">Common questions</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('flash-countdown')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">⏰</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Flash Countdown</h3>
+                    <p className="text-sm text-gray-400 font-sans">Urgency timer + sale</p>
+                  </button>
+
+                  <button
+                    onClick={() => applyTemplate('product-showcase')}
+                    className="glass-morphism p-6 rounded-lg hover:scale-105 transition-all duration-300 text-left"
+                    style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
+                  >
+                    <div className="text-3xl mb-2">🖼️</div>
+                    <h3 className="font-bold text-white mb-2 font-sans">Product Showcase</h3>
+                    <p className="text-sm text-gray-400 font-sans">Gallery + products</p>
                   </button>
 
                   <button
