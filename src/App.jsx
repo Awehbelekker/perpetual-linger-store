@@ -1166,6 +1166,67 @@ const App = () => {
     addToast('Orders exported successfully!', 'success');
   };
 
+  // ============================================================================
+  // CUSTOMER MANAGEMENT FUNCTIONS
+  // ============================================================================
+
+  // Get unique customers from orders
+  const getCustomers = () => {
+    const customerMap = new Map();
+
+    analyticsData.orders.forEach(order => {
+      const email = order.customerEmail || 'unknown';
+      if (!customerMap.has(email)) {
+        customerMap.set(email, {
+          email: email,
+          name: order.customerName || 'N/A',
+          phone: order.customerPhone || '',
+          orders: [],
+          totalSpent: 0,
+          firstOrder: order.timestamp,
+          lastOrder: order.timestamp
+        });
+      }
+
+      const customer = customerMap.get(email);
+      customer.orders.push(order);
+      customer.totalSpent += order.total || 0;
+
+      if (new Date(order.timestamp) < new Date(customer.firstOrder)) {
+        customer.firstOrder = order.timestamp;
+      }
+      if (new Date(order.timestamp) > new Date(customer.lastOrder)) {
+        customer.lastOrder = order.timestamp;
+      }
+    });
+
+    return Array.from(customerMap.values());
+  };
+
+  // Segment customers
+  const segmentCustomers = (customers) => {
+    const vip = customers.filter(c => c.totalSpent >= 1000);
+    const returning = customers.filter(c => c.orders.length > 1 && c.totalSpent < 1000);
+    const newCustomers = customers.filter(c => c.orders.length === 1);
+
+    return { vip, returning, newCustomers };
+  };
+
+  // Export customer emails
+  const exportCustomerEmails = () => {
+    const customers = getCustomers();
+    const emails = customers.map(c => c.email).filter(e => e !== 'unknown').join('\n');
+
+    const blob = new Blob([emails], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customer-emails-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    addToast('Customer emails exported!', 'success');
+  };
+
   // Newsletter State
   const [newsletterEmails, setNewsletterEmails] = useState(() => {
     const saved = localStorage.getItem('perpetualLingerNewsletterEmails');
@@ -4146,6 +4207,17 @@ const App = () => {
               📦 Order Management
             </button>
             <button
+              onClick={() => setAdminTab('customers')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'customers'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'customers' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              👥 Customer Management
+            </button>
+            <button
               onClick={() => setAdminTab('products')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'products'
@@ -4522,6 +4594,185 @@ const App = () => {
                             {orderFilter === 'all'
                               ? 'No orders have been placed yet.'
                               : `No ${orderFilter} orders found.`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Customer Management Tab */}
+          {adminTab === 'customers' && (
+            <div className="space-y-6 animate-fadeIn">
+              {(() => {
+                const customers = getCustomers();
+                const segments = segmentCustomers(customers);
+                const [customerFilter, setCustomerFilter] = React.useState('all');
+
+                const filteredCustomers =
+                  customerFilter === 'vip' ? segments.vip :
+                  customerFilter === 'returning' ? segments.returning :
+                  customerFilter === 'new' ? segments.newCustomers :
+                  customers;
+
+                return (
+                  <>
+                    {/* Customer Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <button
+                        onClick={() => setCustomerFilter('all')}
+                        className={`glass-morphism rounded-xl p-6 transition-all duration-300 ${
+                          customerFilter === 'all' ? 'ring-2 ring-gold' : 'hover:scale-105'
+                        }`}
+                      >
+                        <div className="text-4xl mb-2">👥</div>
+                        <div className="text-3xl font-bold text-gradient">{customers.length}</div>
+                        <div className="text-sm text-gray-400">All Customers</div>
+                      </button>
+                      <button
+                        onClick={() => setCustomerFilter('vip')}
+                        className={`glass-morphism rounded-xl p-6 transition-all duration-300 ${
+                          customerFilter === 'vip' ? 'ring-2 ring-gold' : 'hover:scale-105'
+                        }`}
+                      >
+                        <div className="text-4xl mb-2">👑</div>
+                        <div className="text-3xl font-bold" style={{ color: '#D4AF37' }}>{segments.vip.length}</div>
+                        <div className="text-sm text-gray-400">VIP (R1000+)</div>
+                      </button>
+                      <button
+                        onClick={() => setCustomerFilter('returning')}
+                        className={`glass-morphism rounded-xl p-6 transition-all duration-300 ${
+                          customerFilter === 'returning' ? 'ring-2 ring-gold' : 'hover:scale-105'
+                        }`}
+                      >
+                        <div className="text-4xl mb-2">🔄</div>
+                        <div className="text-3xl font-bold" style={{ color: '#8B5CF6' }}>{segments.returning.length}</div>
+                        <div className="text-sm text-gray-400">Returning</div>
+                      </button>
+                      <button
+                        onClick={() => setCustomerFilter('new')}
+                        className={`glass-morphism rounded-xl p-6 transition-all duration-300 ${
+                          customerFilter === 'new' ? 'ring-2 ring-gold' : 'hover:scale-105'
+                        }`}
+                      >
+                        <div className="text-4xl mb-2">✨</div>
+                        <div className="text-3xl font-bold" style={{ color: '#10B981' }}>{segments.newCustomers.length}</div>
+                        <div className="text-sm text-gray-400">New</div>
+                      </button>
+                    </div>
+
+                    {/* Actions Bar */}
+                    <div className="glass-morphism rounded-xl p-4 flex justify-between items-center">
+                      <h2 className="text-2xl font-bold text-gradient">
+                        {customerFilter === 'all' ? 'All Customers' :
+                         customerFilter === 'vip' ? 'VIP Customers' :
+                         customerFilter === 'returning' ? 'Returning Customers' :
+                         'New Customers'}
+                        <span className="text-gray-400 text-lg ml-2">({filteredCustomers.length})</span>
+                      </h2>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={exportCustomerEmails}
+                          className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all font-semibold flex items-center gap-2"
+                        >
+                          📧 Export Emails
+                        </button>
+                        <button
+                          onClick={() => {
+                            const newsletterCount = newsletterEmails.length;
+                            addToast(`${newsletterCount} newsletter subscribers`, 'info');
+                          }}
+                          className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all font-semibold border-2 border-gold"
+                        >
+                          📬 Newsletter ({newsletterEmails.length})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Customers List */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                      {filteredCustomers.length > 0 ? (
+                        <div className="space-y-4">
+                          {filteredCustomers.sort((a, b) => b.totalSpent - a.totalSpent).map((customer, idx) => (
+                            <div key={idx} className="bg-black/30 rounded-lg p-6 border border-gold/10 hover:border-gold/30 transition-all">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-16 h-16 rounded-full luxury-gradient flex items-center justify-center text-2xl font-bold text-black">
+                                    {customer.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <h3 className="text-xl font-bold text-white mb-1">{customer.name}</h3>
+                                    <p className="text-sm text-gray-400">{customer.email}</p>
+                                    {customer.phone && <p className="text-sm text-gray-400">{customer.phone}</p>}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  {customer.totalSpent >= 1000 && (
+                                    <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold mb-2" style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #F4E4C1 100%)', color: '#000' }}>
+                                      👑 VIP Customer
+                                    </span>
+                                  )}
+                                  <p className="text-2xl font-bold text-gradient">R{customer.totalSpent.toFixed(2)}</p>
+                                  <p className="text-sm text-gray-400">Total Spent</p>
+                                </div>
+                              </div>
+
+                              <div className="grid md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-black/30 p-4 rounded-lg">
+                                  <p className="text-sm text-gray-400 mb-1">Total Orders</p>
+                                  <p className="text-2xl font-bold text-white">{customer.orders.length}</p>
+                                </div>
+                                <div className="bg-black/30 p-4 rounded-lg">
+                                  <p className="text-sm text-gray-400 mb-1">First Order</p>
+                                  <p className="text-sm text-white">{new Date(customer.firstOrder).toLocaleDateString()}</p>
+                                </div>
+                                <div className="bg-black/30 p-4 rounded-lg">
+                                  <p className="text-sm text-gray-400 mb-1">Last Order</p>
+                                  <p className="text-sm text-white">{new Date(customer.lastOrder).toLocaleDateString()}</p>
+                                </div>
+                              </div>
+
+                              {/* Order History */}
+                              <div>
+                                <p className="text-sm text-gray-400 mb-2">Order History:</p>
+                                <div className="space-y-2">
+                                  {customer.orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map((order, orderIdx) => (
+                                    <div key={orderIdx} className="flex justify-between items-center bg-black/30 p-3 rounded-lg">
+                                      <div>
+                                        <p className="text-white font-semibold">{order.id}</p>
+                                        <p className="text-sm text-gray-400">{new Date(order.timestamp).toLocaleString()}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-white font-semibold">R{order.total?.toFixed(2)}</p>
+                                        <p className="text-sm" style={{
+                                          color:
+                                            order.status === 'delivered' ? '#10B981' :
+                                            order.status === 'shipped' ? '#8B5CF6' :
+                                            order.status === 'processing' ? '#3B82F6' :
+                                            order.status === 'cancelled' ? '#EF4444' :
+                                            '#F59E0B'
+                                        }}>
+                                          {order.status}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <div className="text-6xl mb-4">👥</div>
+                          <h3 className="text-xl font-bold text-white mb-2">No Customers Found</h3>
+                          <p className="text-gray-400">
+                            {customerFilter === 'all'
+                              ? 'No customers yet. Orders will create customer records automatically.'
+                              : `No ${customerFilter} customers found.`}
                           </p>
                         </div>
                       )}
