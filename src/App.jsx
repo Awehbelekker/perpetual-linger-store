@@ -1850,6 +1850,7 @@ const App = () => {
 
   const GOOGLE_CLIENT_ID = '147864566465-4np9e1gp28gj14vg5t5mv1uhp1osou0r.apps.googleusercontent.com';
   const GOOGLE_API_KEY = 'AIzaSyBUjJiA8q4RhH9NHS8vG0YC7lKTYlKT1bk';
+  const GOOGLE_APP_ID = '147864566465'; // Project number
 
   const [googleDriveConfig, setGoogleDriveConfig] = useState(() => {
     const saved = localStorage.getItem('googleDriveConfig');
@@ -2825,7 +2826,7 @@ const App = () => {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.file',
-        ux_mode: 'popup', // Use popup mode instead of redirect
+        prompt: '', // Empty string for normal flow (not 'consent' which can cause issues)
         callback: async (response) => {
           console.log('OAuth callback received:', response);
 
@@ -2878,7 +2879,14 @@ const App = () => {
       });
 
       console.log('Requesting access token...');
-      client.requestAccessToken();
+      console.log('Client configuration:', {
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        origin: window.location.origin
+      });
+
+      // Request token with explicit prompt parameter
+      client.requestAccessToken({ prompt: '' });
     } catch (error) {
       console.error('Error initializing OAuth:', error);
       addToast(`❌ Failed to initialize: ${error.message}`, 'error');
@@ -8335,6 +8343,18 @@ const App = () => {
                         <li>Sign in with your Google account</li>
                         <li>Grant permission to access Google Drive</li>
                         <li>Done! Your content will auto-sync</li>
+                      </ol>
+                    </div>
+
+                    {/* Troubleshooting */}
+                    <div className="bg-yellow-900/20 border-2 border-yellow-600 rounded-xl p-6">
+                      <h4 className="font-bold text-yellow-400 mb-3">⚠️ Getting 400 Error?</h4>
+                      <p className="text-sm text-yellow-200 mb-2">Make sure Google Drive API is enabled:</p>
+                      <ol className="list-decimal list-inside space-y-2 text-xs text-yellow-200">
+                        <li>Go to: <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=rosy-dynamics-477308-t2" target="_blank" className="text-yellow-400 underline">Enable Drive API</a></li>
+                        <li>Click "Enable" button</li>
+                        <li>Wait 1-2 minutes for changes to propagate</li>
+                        <li>Try connecting again</li>
                       </ol>
                     </div>
                   </div>
