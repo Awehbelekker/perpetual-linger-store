@@ -1105,6 +1105,67 @@ const App = () => {
       }));
   };
 
+  // ============================================================================
+  // ORDER MANAGEMENT FUNCTIONS
+  // ============================================================================
+
+  // Update order status
+  const updateOrderStatus = (orderId, newStatus) => {
+    setAnalyticsData(prev => ({
+      ...prev,
+      orders: prev.orders.map(order =>
+        order.id === orderId
+          ? { ...order, status: newStatus, lastUpdated: new Date().toISOString() }
+          : order
+      )
+    }));
+    addToast(`Order ${orderId} updated to ${newStatus}`, 'success');
+  };
+
+  // Delete order
+  const deleteOrder = (orderId) => {
+    if (confirm('Are you sure you want to delete this order?')) {
+      setAnalyticsData(prev => ({
+        ...prev,
+        orders: prev.orders.filter(order => order.id !== orderId)
+      }));
+      addToast('Order deleted', 'info');
+    }
+  };
+
+  // Get orders by status
+  const getOrdersByStatus = (status) => {
+    if (status === 'all') return analyticsData.orders;
+    return analyticsData.orders.filter(order => order.status === status);
+  };
+
+  // Export orders to CSV
+  const exportOrdersToCSV = () => {
+    const headers = ['Order ID', 'Date', 'Customer', 'Items', 'Total', 'Status'];
+    const rows = analyticsData.orders.map(order => [
+      order.id,
+      order.date,
+      order.customerName || 'N/A',
+      order.items?.length || 0,
+      `R${order.total}`,
+      order.status
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    addToast('Orders exported successfully!', 'success');
+  };
+
   // Newsletter State
   const [newsletterEmails, setNewsletterEmails] = useState(() => {
     const saved = localStorage.getItem('perpetualLingerNewsletterEmails');
@@ -2920,12 +2981,30 @@ const App = () => {
     }
 
     try {
+      const total = getFinalTotal();
       const message = `Hi! I'd like to order:\n\n${cart.map(item =>
         `${item.name} - ${item.size} (${item.quantity}x R${item.price})`
-      ).join('\n')}\n\nTotal: R${getTotalPrice()}.00`;
+      ).join('\n')}\n\nTotal: R${total.toFixed(2)}`;
+
+      // Create order record
+      trackPurchaseAnalytics({
+        items: cart,
+        total: total,
+        paymentMethod: 'WhatsApp',
+        customerName: 'WhatsApp Customer',
+        discount: appliedDiscount ? calculateDiscount() : 0
+      });
+
+      // Track GA4
+      trackPurchase(total, cart);
 
       window.open(`https://wa.me/27610100845?text=${encodeURIComponent(message)}`, '_blank');
-      addToast('Opening WhatsApp...', 'success');
+      addToast('Opening WhatsApp... Order created!', 'success');
+
+      // Clear cart after order
+      setCart([]);
+      setAppliedDiscount(null);
+      setCartOpen(false);
     } catch (error) {
       addToast('Failed to open WhatsApp. Please try again.', 'error');
     }
@@ -4056,6 +4135,17 @@ const App = () => {
               📊 Analytics Dashboard
             </button>
             <button
+              onClick={() => setAdminTab('orders')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'orders'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'orders' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              📦 Order Management
+            </button>
+            <button
               onClick={() => setAdminTab('products')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'products'
@@ -4278,6 +4368,161 @@ const App = () => {
                       ) : (
                         <div className="text-center py-12">
                           <p className="text-gray-400">No product views yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Order Management Tab */}
+          {adminTab === 'orders' && (
+            <div className="space-y-6 animate-fadeIn">
+              {(() => {
+                const [orderFilter, setOrderFilter] = React.useState('all');
+                const filteredOrders = getOrdersByStatus(orderFilter);
+                const orderStats = {
+                  all: analyticsData.orders.length,
+                  pending: analyticsData.orders.filter(o => o.status === 'pending').length,
+                  processing: analyticsData.orders.filter(o => o.status === 'processing').length,
+                  shipped: analyticsData.orders.filter(o => o.status === 'shipped').length,
+                  delivered: analyticsData.orders.filter(o => o.status === 'delivered').length,
+                  cancelled: analyticsData.orders.filter(o => o.status === 'cancelled').length
+                };
+
+                return (
+                  <>
+                    {/* Order Stats Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                      {[
+                        { label: 'All Orders', value: orderStats.all, status: 'all', icon: '📦', color: '#D4AF37' },
+                        { label: 'Pending', value: orderStats.pending, status: 'pending', icon: '⏳', color: '#F59E0B' },
+                        { label: 'Processing', value: orderStats.processing, status: 'processing', icon: '⚙️', color: '#3B82F6' },
+                        { label: 'Shipped', value: orderStats.shipped, status: 'shipped', icon: '🚚', color: '#8B5CF6' },
+                        { label: 'Delivered', value: orderStats.delivered, status: 'delivered', icon: '✅', color: '#10B981' },
+                        { label: 'Cancelled', value: orderStats.cancelled, status: 'cancelled', icon: '❌', color: '#EF4444' }
+                      ].map(stat => (
+                        <button
+                          key={stat.status}
+                          onClick={() => setOrderFilter(stat.status)}
+                          className={`glass-morphism rounded-xl p-4 transition-all duration-300 ${
+                            orderFilter === stat.status ? 'ring-2 ring-gold' : 'hover:scale-105'
+                          }`}
+                        >
+                          <div className="text-3xl mb-2">{stat.icon}</div>
+                          <div className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
+                          <div className="text-sm text-gray-400">{stat.label}</div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Actions Bar */}
+                    <div className="glass-morphism rounded-xl p-4 flex justify-between items-center">
+                      <h2 className="text-2xl font-bold text-gradient">
+                        {orderFilter === 'all' ? 'All Orders' : `${orderFilter.charAt(0).toUpperCase() + orderFilter.slice(1)} Orders`}
+                        <span className="text-gray-400 text-lg ml-2">({filteredOrders.length})</span>
+                      </h2>
+                      <button
+                        onClick={exportOrdersToCSV}
+                        className="luxury-gradient text-black px-6 py-3 rounded-lg hover:scale-105 transition-all font-semibold flex items-center gap-2"
+                      >
+                        📥 Export to CSV
+                      </button>
+                    </div>
+
+                    {/* Orders List */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6">
+                      {filteredOrders.length > 0 ? (
+                        <div className="space-y-4">
+                          {filteredOrders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(order => (
+                            <div key={order.id} className="bg-black/30 rounded-lg p-6 border border-gold/10 hover:border-gold/30 transition-all">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="text-xl font-bold text-white mb-1">{order.id}</h3>
+                                  <p className="text-sm text-gray-400">
+                                    {new Date(order.timestamp).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <select
+                                    value={order.status}
+                                    onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                    className="px-4 py-2 rounded-lg font-semibold bg-black/50 text-white border-2"
+                                    style={{
+                                      borderColor:
+                                        order.status === 'delivered' ? '#10B981' :
+                                        order.status === 'shipped' ? '#8B5CF6' :
+                                        order.status === 'processing' ? '#3B82F6' :
+                                        order.status === 'cancelled' ? '#EF4444' :
+                                        '#F59E0B'
+                                    }}
+                                  >
+                                    <option value="pending">⏳ Pending</option>
+                                    <option value="processing">⚙️ Processing</option>
+                                    <option value="shipped">🚚 Shipped</option>
+                                    <option value="delivered">✅ Delivered</option>
+                                    <option value="cancelled">❌ Cancelled</option>
+                                  </select>
+                                  <button
+                                    onClick={() => deleteOrder(order.id)}
+                                    className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <p className="text-sm text-gray-400 mb-1">Customer</p>
+                                  <p className="text-white font-semibold">{order.customerName || 'N/A'}</p>
+                                  <p className="text-sm text-gray-400">{order.customerEmail || ''}</p>
+                                  <p className="text-sm text-gray-400">{order.customerPhone || ''}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-400 mb-1">Order Total</p>
+                                  <p className="text-2xl font-bold text-gradient">R{order.total?.toFixed(2) || '0.00'}</p>
+                                  <p className="text-sm text-gray-400">{order.items?.length || 0} items</p>
+                                </div>
+                              </div>
+
+                              {order.items && order.items.length > 0 && (
+                                <div>
+                                  <p className="text-sm text-gray-400 mb-2">Order Items:</p>
+                                  <div className="space-y-2">
+                                    {order.items.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between items-center bg-black/30 p-3 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                          <img
+                                            src={item.image || '/Final.png'}
+                                            alt={item.name}
+                                            className="w-12 h-12 object-cover rounded"
+                                          />
+                                          <div>
+                                            <p className="text-white font-semibold">{item.name}</p>
+                                            <p className="text-sm text-gray-400">{item.size} × {item.quantity}</p>
+                                          </div>
+                                        </div>
+                                        <p className="text-white font-semibold">R{(item.price * item.quantity).toFixed(2)}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <div className="text-6xl mb-4">📦</div>
+                          <h3 className="text-xl font-bold text-white mb-2">No Orders Found</h3>
+                          <p className="text-gray-400">
+                            {orderFilter === 'all'
+                              ? 'No orders have been placed yet.'
+                              : `No ${orderFilter} orders found.`}
+                          </p>
                         </div>
                       )}
                     </div>
