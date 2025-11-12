@@ -4637,23 +4637,30 @@ const App = () => {
     });
     const [selectedCategory, setSelectedCategory] = useState('forHer');
     const [editingProduct, setEditingProduct] = useState(null);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    const handleAddProduct = () => {
+    const handleAddProduct = (e) => {
+      if (e) e.preventDefault();
       if (newProduct.name && newProduct.category && newProduct.description) {
         addNewProduct(selectedCategory, newProduct);
         setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
-        addToast('Product added successfully!', 'success');
+        setHasUnsavedChanges(false);
+        addToast('✅ Product added successfully!', 'success');
+        // Don't change tab - stay on current tab
       } else {
-        addToast('Please fill in all required fields', 'error');
+        addToast('❌ Please fill in all required fields', 'error');
       }
     };
 
-    const handleUpdateProduct = () => {
+    const handleUpdateProduct = (e) => {
+      if (e) e.preventDefault();
       if (editingProduct) {
         updateProduct(selectedCategory, editingProduct.id, newProduct);
         setEditingProduct(null);
         setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
-        addToast('Product updated successfully!', 'success');
+        setHasUnsavedChanges(false);
+        addToast('✅ Product updated successfully!', 'success');
+        // Don't change tab - stay on current tab
       }
     };
 
@@ -4700,9 +4707,23 @@ const App = () => {
         <div className="absolute inset-0 texture-overlay opacity-20"></div>
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-gradient font-serif">Admin Panel</h1>
+            <div>
+              <h1 className="text-4xl font-bold text-gradient font-serif">Admin Panel</h1>
+              {hasUnsavedChanges && (
+                <p className="text-yellow-400 text-sm mt-2 flex items-center gap-2">
+                  <span className="animate-pulse">⚠️</span>
+                  <span>You have unsaved changes</span>
+                </p>
+              )}
+            </div>
             <button
-              onClick={() => { setIsAdmin(false); setCurrentPage('home'); }}
+              onClick={() => {
+                if (hasUnsavedChanges && !confirm('You have unsaved changes. Are you sure you want to logout?')) {
+                  return;
+                }
+                setIsAdmin(false);
+                setCurrentPage('home');
+              }}
               className="glass-morphism text-white px-6 py-3 rounded-lg hover:scale-105 transition-all duration-300 font-semibold"
               style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
             >
@@ -5647,7 +5668,10 @@ const App = () => {
                   <input
                     type="text"
                     value={newProduct.name}
-                    onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                    onChange={(e) => {
+                      setNewProduct({...newProduct, name: e.target.value});
+                      setHasUnsavedChanges(true);
+                    }}
                     className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
                     style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Chanel Chance"
@@ -5659,7 +5683,10 @@ const App = () => {
                   <input
                     type="text"
                     value={newProduct.category}
-                    onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                    onChange={(e) => {
+                      setNewProduct({...newProduct, category: e.target.value});
+                      setHasUnsavedChanges(true);
+                    }}
                     className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
                     style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Classic & Timeless"
@@ -5671,7 +5698,10 @@ const App = () => {
                   <input
                     type="text"
                     value={newProduct.notes}
-                    onChange={(e) => setNewProduct({...newProduct, notes: e.target.value})}
+                    onChange={(e) => {
+                      setNewProduct({...newProduct, notes: e.target.value});
+                      setHasUnsavedChanges(true);
+                    }}
                     className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400"
                     style={{ borderColor: '#D4AF37' }}
                     placeholder="e.g., Pink Pepper, Jasmine, Amber Patchouli, Vanilla"
@@ -5682,7 +5712,10 @@ const App = () => {
                   <label className="block font-medium mb-2 text-white font-sans">Description *</label>
                   <textarea
                     value={newProduct.description}
-                    onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                    onChange={(e) => {
+                      setNewProduct({...newProduct, description: e.target.value});
+                      setHasUnsavedChanges(true);
+                    }}
                     className="w-full p-3 border-2 rounded-lg focus:outline-none font-sans bg-black/30 text-white placeholder-gray-400 h-24"
                     style={{ borderColor: '#D4AF37' }}
                     placeholder="Seductive description that captures the essence..."
@@ -5883,28 +5916,35 @@ const App = () => {
                   {editingProduct ? (
                     <>
                       <button
+                        type="button"
                         onClick={handleUpdateProduct}
                         className="flex-1 luxury-gradient text-black py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                       >
-                        Update Product
+                        ✅ Update Product
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
+                          if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) {
+                            return;
+                          }
                           setEditingProduct(null);
                           setNewProduct({ name: '', category: '', notes: '', description: '', images: [], mainImageIndex: 0, referenceImage: '', showReference: true });
+                          setHasUnsavedChanges(false);
                         }}
                         className="flex-1 glass-morphism text-white py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                         style={{ borderColor: '#D4AF37', borderWidth: '2px' }}
                       >
-                        Cancel
+                        ❌ Cancel
                       </button>
                     </>
                   ) : (
                     <button
+                      type="button"
                       onClick={handleAddProduct}
                       className="w-full luxury-gradient text-black py-3 font-semibold hover:scale-105 transition-all duration-300 rounded-lg"
                     >
-                      Add Product
+                      ➕ Add Product
                     </button>
                   )}
                 </div>
