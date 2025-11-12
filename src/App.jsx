@@ -1471,13 +1471,61 @@ const App = () => {
   // DISCOUNT CODES SYSTEM
   // ============================================================================
 
-  const [discountCodes] = useState({
-    'WELCOME10': { type: 'percentage', value: 10, description: 'Welcome discount - 10% off' },
-    'FIRST15': { type: 'percentage', value: 15, description: 'First order - 15% off' },
-    'SAVE20': { type: 'percentage', value: 20, description: 'Special offer - 20% off' },
-    'FREESHIP': { type: 'free_shipping', value: 0, description: 'Free shipping' },
-    'LUXURY25': { type: 'percentage', value: 25, description: 'Luxury discount - 25% off' },
+  const [discountCodes, setDiscountCodes] = useState(() => {
+    const saved = localStorage.getItem('perpetualLingerDiscountCodes');
+    return saved ? JSON.parse(saved) : {
+      'WELCOME10': {
+        type: 'percentage',
+        value: 10,
+        description: 'Welcome discount - 10% off',
+        expiresAt: null,
+        maxUses: null,
+        currentUses: 0,
+        active: true
+      },
+      'FIRST15': {
+        type: 'percentage',
+        value: 15,
+        description: 'First order - 15% off',
+        expiresAt: null,
+        maxUses: null,
+        currentUses: 0,
+        active: true
+      },
+      'SAVE20': {
+        type: 'percentage',
+        value: 20,
+        description: 'Special offer - 20% off',
+        expiresAt: null,
+        maxUses: null,
+        currentUses: 0,
+        active: true
+      },
+      'FREESHIP': {
+        type: 'free_shipping',
+        value: 0,
+        description: 'Free shipping',
+        expiresAt: null,
+        maxUses: null,
+        currentUses: 0,
+        active: true
+      },
+      'LUXURY25': {
+        type: 'percentage',
+        value: 25,
+        description: 'Luxury discount - 25% off',
+        expiresAt: null,
+        maxUses: null,
+        currentUses: 0,
+        active: true
+      },
+    };
   });
+
+  // Save discount codes to localStorage
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerDiscountCodes', JSON.stringify(discountCodes));
+  }, [discountCodes]);
 
   const [appliedDiscount, setAppliedDiscount] = useState(null);
   const [discountInput, setDiscountInput] = useState('');
@@ -1486,19 +1534,49 @@ const App = () => {
     const upperCode = code.toUpperCase().trim();
     const discount = discountCodes[upperCode];
 
-    if (discount) {
-      setAppliedDiscount({ code: upperCode, ...discount });
-      addToast(`✨ Discount applied: ${discount.description}!`, 'success');
-      setDiscountInput('');
-      // Track analytics
-      trackEvent('apply_discount', {
-        code: upperCode,
-        discount_type: discount.type,
-        discount_value: discount.value,
-      });
-    } else {
+    if (!discount) {
       addToast('Invalid discount code', 'error');
+      return;
     }
+
+    // Check if code is active
+    if (!discount.active) {
+      addToast('This discount code is no longer active', 'error');
+      return;
+    }
+
+    // Check expiration
+    if (discount.expiresAt && new Date(discount.expiresAt) < new Date()) {
+      addToast('This discount code has expired', 'error');
+      return;
+    }
+
+    // Check usage limit
+    if (discount.maxUses && discount.currentUses >= discount.maxUses) {
+      addToast('This discount code has reached its usage limit', 'error');
+      return;
+    }
+
+    // Apply discount
+    setAppliedDiscount({ code: upperCode, ...discount });
+    addToast(`✨ Discount applied: ${discount.description}!`, 'success');
+    setDiscountInput('');
+
+    // Increment usage count
+    setDiscountCodes(prev => ({
+      ...prev,
+      [upperCode]: {
+        ...prev[upperCode],
+        currentUses: (prev[upperCode].currentUses || 0) + 1
+      }
+    }));
+
+    // Track analytics
+    trackEvent('apply_discount', {
+      code: upperCode,
+      discount_type: discount.type,
+      discount_value: discount.value,
+    });
   };
 
   const removeDiscount = () => {
@@ -4218,6 +4296,17 @@ const App = () => {
               👥 Customer Management
             </button>
             <button
+              onClick={() => setAdminTab('discounts')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'discounts'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'discounts' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              💰 Discount Codes
+            </button>
+            <button
               onClick={() => setAdminTab('products')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'products'
@@ -4774,6 +4863,305 @@ const App = () => {
                               ? 'No customers yet. Orders will create customer records automatically.'
                               : `No ${customerFilter} customers found.`}
                           </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Discount Code Manager Tab */}
+          {adminTab === 'discounts' && (
+            <div className="space-y-6 animate-fadeIn">
+              {(() => {
+                const [editingCode, setEditingCode] = React.useState(null);
+                const [newCode, setNewCode] = React.useState({
+                  code: '',
+                  type: 'percentage',
+                  value: 10,
+                  description: '',
+                  expiresAt: '',
+                  maxUses: '',
+                  active: true
+                });
+
+                const handleAddCode = () => {
+                  if (!newCode.code.trim()) {
+                    addToast('Please enter a code', 'error');
+                    return;
+                  }
+
+                  const upperCode = newCode.code.toUpperCase().trim();
+
+                  if (discountCodes[upperCode]) {
+                    addToast('Code already exists', 'error');
+                    return;
+                  }
+
+                  setDiscountCodes(prev => ({
+                    ...prev,
+                    [upperCode]: {
+                      type: newCode.type,
+                      value: parseFloat(newCode.value) || 0,
+                      description: newCode.description || `${newCode.value}% off`,
+                      expiresAt: newCode.expiresAt || null,
+                      maxUses: newCode.maxUses ? parseInt(newCode.maxUses) : null,
+                      currentUses: 0,
+                      active: true
+                    }
+                  }));
+
+                  addToast(`✨ Discount code ${upperCode} created!`, 'success');
+                  setNewCode({
+                    code: '',
+                    type: 'percentage',
+                    value: 10,
+                    description: '',
+                    expiresAt: '',
+                    maxUses: '',
+                    active: true
+                  });
+                };
+
+                const handleDeleteCode = (code) => {
+                  if (confirm(`Delete discount code ${code}?`)) {
+                    setDiscountCodes(prev => {
+                      const updated = { ...prev };
+                      delete updated[code];
+                      return updated;
+                    });
+                    addToast('Discount code deleted', 'info');
+                  }
+                };
+
+                const handleToggleActive = (code) => {
+                  setDiscountCodes(prev => ({
+                    ...prev,
+                    [code]: {
+                      ...prev[code],
+                      active: !prev[code].active
+                    }
+                  }));
+                  addToast(`Code ${code} ${discountCodes[code].active ? 'deactivated' : 'activated'}`, 'info');
+                };
+
+                const codesList = Object.entries(discountCodes);
+                const activeCount = codesList.filter(([, data]) => data.active).length;
+                const totalUses = codesList.reduce((sum, [, data]) => sum + (data.currentUses || 0), 0);
+
+                return (
+                  <>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="glass-morphism rounded-xl p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Total Codes</h3>
+                          <span className="text-3xl">💰</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">{codesList.length}</p>
+                        <p className="text-sm text-gray-400 mt-2">{activeCount} active</p>
+                      </div>
+
+                      <div className="glass-morphism rounded-xl p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Total Uses</h3>
+                          <span className="text-3xl">📊</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">{totalUses}</p>
+                        <p className="text-sm text-gray-400 mt-2">All time</p>
+                      </div>
+
+                      <div className="glass-morphism rounded-xl p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Most Used</h3>
+                          <span className="text-3xl">🏆</span>
+                        </div>
+                        {(() => {
+                          const mostUsed = codesList.sort((a, b) => (b[1].currentUses || 0) - (a[1].currentUses || 0))[0];
+                          return mostUsed ? (
+                            <>
+                              <p className="text-xl font-bold text-gradient">{mostUsed[0]}</p>
+                              <p className="text-sm text-gray-400 mt-2">{mostUsed[1].currentUses || 0} uses</p>
+                            </>
+                          ) : (
+                            <p className="text-gray-400">No data</p>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Add New Code Form */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                      <h2 className="text-2xl font-bold mb-6 text-gradient">Create New Discount Code</h2>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">Code *</label>
+                          <input
+                            type="text"
+                            value={newCode.code}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                            placeholder="SUMMER25"
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">Type</label>
+                          <select
+                            value={newCode.type}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, type: e.target.value }))}
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                          >
+                            <option value="percentage">Percentage Off</option>
+                            <option value="fixed">Fixed Amount</option>
+                            <option value="free_shipping">Free Shipping</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">
+                            {newCode.type === 'percentage' ? 'Percentage (%)' : 'Amount (R)'}
+                          </label>
+                          <input
+                            type="number"
+                            value={newCode.value}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, value: e.target.value }))}
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                            disabled={newCode.type === 'free_shipping'}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">Description</label>
+                          <input
+                            type="text"
+                            value={newCode.description}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Summer sale - 25% off"
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">Expires At (Optional)</label>
+                          <input
+                            type="datetime-local"
+                            value={newCode.expiresAt}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, expiresAt: e.target.value }))}
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-white mb-2">Max Uses (Optional)</label>
+                          <input
+                            type="number"
+                            value={newCode.maxUses}
+                            onChange={(e) => setNewCode(prev => ({ ...prev, maxUses: e.target.value }))}
+                            placeholder="Unlimited"
+                            className="w-full p-3 rounded-lg bg-black/30 text-white border-2 border-gold/20 focus:border-gold focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleAddCode}
+                        className="mt-6 luxury-gradient text-black px-8 py-3 rounded-lg hover:scale-105 transition-all font-semibold w-full md:w-auto"
+                      >
+                        ✨ Create Discount Code
+                      </button>
+                    </div>
+
+                    {/* Existing Codes List */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                      <h2 className="text-2xl font-bold mb-6 text-gradient">Existing Discount Codes</h2>
+                      {codesList.length > 0 ? (
+                        <div className="space-y-4">
+                          {codesList.map(([code, data]) => (
+                            <div key={code} className={`bg-black/30 rounded-lg p-6 border transition-all ${
+                              data.active ? 'border-gold/20 hover:border-gold/40' : 'border-gray-600/20 opacity-60'
+                            }`}>
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-2xl font-bold text-gradient">{code}</h3>
+                                    {!data.active && (
+                                      <span className="px-3 py-1 bg-gray-600 text-white text-xs rounded-full">Inactive</span>
+                                    )}
+                                    {data.expiresAt && new Date(data.expiresAt) < new Date() && (
+                                      <span className="px-3 py-1 bg-red-500 text-white text-xs rounded-full">Expired</span>
+                                    )}
+                                  </div>
+                                  <p className="text-white mb-1">{data.description}</p>
+                                  <p className="text-sm text-gray-400">
+                                    {data.type === 'percentage' ? `${data.value}% off` :
+                                     data.type === 'fixed' ? `R${data.value} off` :
+                                     'Free shipping'}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleToggleActive(code)}
+                                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                      data.active
+                                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                        : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+                                    }`}
+                                  >
+                                    {data.active ? '✓ Active' : '✗ Inactive'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCode(code)}
+                                    className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-black/30 p-3 rounded-lg">
+                                  <p className="text-xs text-gray-400 mb-1">Uses</p>
+                                  <p className="text-lg font-bold text-white">
+                                    {data.currentUses || 0}
+                                    {data.maxUses && ` / ${data.maxUses}`}
+                                  </p>
+                                </div>
+                                <div className="bg-black/30 p-3 rounded-lg">
+                                  <p className="text-xs text-gray-400 mb-1">Expires</p>
+                                  <p className="text-sm text-white">
+                                    {data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'Never'}
+                                  </p>
+                                </div>
+                                <div className="bg-black/30 p-3 rounded-lg">
+                                  <p className="text-xs text-gray-400 mb-1">Type</p>
+                                  <p className="text-sm text-white capitalize">{data.type.replace('_', ' ')}</p>
+                                </div>
+                                <div className="bg-black/30 p-3 rounded-lg">
+                                  <p className="text-xs text-gray-400 mb-1">Status</p>
+                                  <p className="text-sm font-semibold" style={{
+                                    color: !data.active ? '#9CA3AF' :
+                                           data.expiresAt && new Date(data.expiresAt) < new Date() ? '#EF4444' :
+                                           data.maxUses && data.currentUses >= data.maxUses ? '#F59E0B' :
+                                           '#10B981'
+                                  }}>
+                                    {!data.active ? 'Inactive' :
+                                     data.expiresAt && new Date(data.expiresAt) < new Date() ? 'Expired' :
+                                     data.maxUses && data.currentUses >= data.maxUses ? 'Limit Reached' :
+                                     'Active'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <div className="text-6xl mb-4">💰</div>
+                          <h3 className="text-xl font-bold text-white mb-2">No Discount Codes</h3>
+                          <p className="text-gray-400">Create your first discount code above!</p>
                         </div>
                       )}
                     </div>
