@@ -2009,16 +2009,37 @@ const App = () => {
     }
   };
 
-  // Simplified OAuth 2.0 Authentication - One Click!
+  // Enhanced OAuth 2.0 Authentication with Better Error Handling
   const authenticateGoogleDrive = () => {
     setIsAuthenticating(true);
 
     try {
+      // Check if Google Identity Services is loaded
+      if (!window.google || !window.google.accounts) {
+        console.error('Google Identity Services not loaded');
+        addToast('❌ Google services not loaded. Please refresh the page.', 'error');
+        setIsAuthenticating(false);
+        return;
+      }
+
+      console.log('Initializing Google OAuth with Client ID:', GOOGLE_CLIENT_ID);
+
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.file',
         callback: async (response) => {
+          console.log('OAuth callback received:', response);
+
+          if (response.error) {
+            console.error('OAuth error in callback:', response.error);
+            addToast(`❌ Authentication error: ${response.error}`, 'error');
+            setIsAuthenticating(false);
+            return;
+          }
+
           if (response.access_token) {
+            console.log('Access token received successfully');
+
             // Calculate token expiration (typically 1 hour)
             const expiresAt = Date.now() + (response.expires_in || 3600) * 1000;
 
@@ -2030,30 +2051,38 @@ const App = () => {
               authenticated: true
             }));
 
-            // Try to find or create the content file
-            await findOrCreateContentFile(response.access_token);
+            try {
+              // Try to find or create the content file
+              await findOrCreateContentFile(response.access_token);
 
-            // Fetch image library
-            await fetchImagesFromGoogleDrive();
+              // Fetch image library
+              await fetchImagesFromGoogleDrive();
 
-            addToast('✅ Successfully connected to Google Drive!', 'success');
+              addToast('✅ Successfully connected to Google Drive!', 'success');
+            } catch (error) {
+              console.error('Error after authentication:', error);
+              addToast('⚠️ Connected but failed to load data. Try refreshing.', 'warning');
+            }
+
             setIsAuthenticating(false);
           } else {
-            addToast('❌ Authentication failed', 'error');
+            console.error('No access token in response');
+            addToast('❌ Authentication failed - no access token', 'error');
             setIsAuthenticating(false);
           }
         },
         error_callback: (error) => {
-          console.error('OAuth error:', error);
-          addToast('❌ Authentication cancelled or failed', 'error');
+          console.error('OAuth error callback:', error);
+          addToast(`❌ Authentication error: ${error.type || 'Unknown error'}`, 'error');
           setIsAuthenticating(false);
         }
       });
 
+      console.log('Requesting access token...');
       client.requestAccessToken();
     } catch (error) {
       console.error('Error initializing OAuth:', error);
-      addToast('❌ Failed to initialize Google authentication', 'error');
+      addToast(`❌ Failed to initialize: ${error.message}`, 'error');
       setIsAuthenticating(false);
     }
   };
