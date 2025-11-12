@@ -949,6 +949,162 @@ const App = () => {
     return (reviews[productId] || []).length;
   };
 
+  // ============================================================================
+  // ANALYTICS TRACKING STATE
+  // ============================================================================
+
+  const [analyticsData, setAnalyticsData] = useState(() => {
+    const saved = localStorage.getItem('perpetualLingerAnalytics');
+    return saved ? JSON.parse(saved) : {
+      pageViews: [],
+      productViews: [],
+      addToCartEvents: [],
+      purchases: [],
+      searchQueries: [],
+      wishlistAdds: [],
+      newsletterSignups: [],
+      totalRevenue: 0,
+      orders: [] // Will store order details
+    };
+  });
+
+  // Save analytics to localStorage
+  useEffect(() => {
+    localStorage.setItem('perpetualLingerAnalytics', JSON.stringify(analyticsData));
+  }, [analyticsData]);
+
+  // Track page view
+  const trackPageView = (pageName) => {
+    setAnalyticsData(prev => ({
+      ...prev,
+      pageViews: [...prev.pageViews, {
+        page: pageName,
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+      }]
+    }));
+  };
+
+  // Track product view (enhanced)
+  const trackProductViewAnalytics = (product) => {
+    setAnalyticsData(prev => ({
+      ...prev,
+      productViews: [...prev.productViews, {
+        productId: product.id,
+        productName: product.name,
+        category: product.category,
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+      }]
+    }));
+  };
+
+  // Track add to cart (enhanced)
+  const trackAddToCartAnalytics = (product, size) => {
+    setAnalyticsData(prev => ({
+      ...prev,
+      addToCartEvents: [...prev.addToCartEvents, {
+        productId: product.id,
+        productName: product.name,
+        size: size,
+        price: product.sizes[size],
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+      }]
+    }));
+  };
+
+  // Track purchase
+  const trackPurchaseAnalytics = (orderData) => {
+    setAnalyticsData(prev => ({
+      ...prev,
+      purchases: [...prev.purchases, {
+        ...orderData,
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+      }],
+      orders: [...prev.orders, {
+        id: `ORD-${Date.now()}`,
+        ...orderData,
+        status: 'pending',
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+      }],
+      totalRevenue: prev.totalRevenue + orderData.total
+    }));
+  };
+
+  // Track search query
+  const trackSearchAnalytics = (query) => {
+    if (query.trim()) {
+      setAnalyticsData(prev => ({
+        ...prev,
+        searchQueries: [...prev.searchQueries, {
+          query: query,
+          timestamp: new Date().toISOString(),
+          date: new Date().toISOString().split('T')[0]
+        }]
+      }));
+    }
+  };
+
+  // Get analytics summary
+  const getAnalyticsSummary = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const last30Days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const filterByDate = (items, startDate) => items.filter(item => item.date >= startDate);
+
+    return {
+      today: {
+        pageViews: filterByDate(analyticsData.pageViews, today).length,
+        productViews: filterByDate(analyticsData.productViews, today).length,
+        addToCarts: filterByDate(analyticsData.addToCartEvents, today).length,
+        purchases: filterByDate(analyticsData.purchases, today).length,
+        revenue: filterByDate(analyticsData.purchases, today).reduce((sum, p) => sum + p.total, 0)
+      },
+      last7Days: {
+        pageViews: filterByDate(analyticsData.pageViews, last7Days).length,
+        productViews: filterByDate(analyticsData.productViews, last7Days).length,
+        addToCarts: filterByDate(analyticsData.addToCartEvents, last7Days).length,
+        purchases: filterByDate(analyticsData.purchases, last7Days).length,
+        revenue: filterByDate(analyticsData.purchases, last7Days).reduce((sum, p) => sum + p.total, 0)
+      },
+      last30Days: {
+        pageViews: filterByDate(analyticsData.pageViews, last30Days).length,
+        productViews: filterByDate(analyticsData.productViews, last30Days).length,
+        addToCarts: filterByDate(analyticsData.productViews, last30Days).length,
+        purchases: filterByDate(analyticsData.purchases, last30Days).length,
+        revenue: filterByDate(analyticsData.purchases, last30Days).reduce((sum, p) => sum + p.total, 0)
+      },
+      allTime: {
+        pageViews: analyticsData.pageViews.length,
+        productViews: analyticsData.productViews.length,
+        addToCarts: analyticsData.addToCartEvents.length,
+        purchases: analyticsData.purchases.length,
+        revenue: analyticsData.totalRevenue
+      }
+    };
+  };
+
+  // Get top products
+  const getTopProducts = (limit = 5) => {
+    const productCounts = {};
+    analyticsData.productViews.forEach(view => {
+      productCounts[view.productId] = (productCounts[view.productId] || 0) + 1;
+    });
+
+    return Object.entries(productCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, limit)
+      .map(([productId, views]) => ({
+        productId,
+        views,
+        product: [...productList.forHer, ...productList.forHim].find(p => p.id === productId)
+      }));
+  };
+
   // Newsletter State
   const [newsletterEmails, setNewsletterEmails] = useState(() => {
     const saved = localStorage.getItem('perpetualLingerNewsletterEmails');
@@ -2638,8 +2794,11 @@ const App = () => {
       addToast(`Added ${product.name} to cart!`, 'success');
     }
 
-    // Track analytics
+    // Track analytics (GA4)
     trackAddToCart(product, 1);
+
+    // Track analytics (internal)
+    trackAddToCartAnalytics(product, size);
 
     setCartOpen(true);
   };
@@ -3797,7 +3956,7 @@ const App = () => {
   );
 
   const AdminPanel = () => {
-    const [adminTab, setAdminTab] = useState('products'); // 'products' or 'cms'
+    const [adminTab, setAdminTab] = useState('analytics'); // Default to analytics dashboard
     const [newProduct, setNewProduct] = useState({
       name: '',
       category: '',
@@ -3886,6 +4045,17 @@ const App = () => {
           {/* Admin Tabs */}
           <div className="flex flex-wrap gap-4 mb-8">
             <button
+              onClick={() => setAdminTab('analytics')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                adminTab === 'analytics'
+                  ? 'luxury-gradient text-black'
+                  : 'glass-morphism text-white hover:scale-105'
+              }`}
+              style={adminTab !== 'analytics' ? { borderColor: '#D4AF37', borderWidth: '2px' } : {}}
+            >
+              📊 Analytics Dashboard
+            </button>
+            <button
               onClick={() => setAdminTab('products')}
               className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                 adminTab === 'products'
@@ -3957,6 +4127,165 @@ const App = () => {
               Google Drive Settings
             </button>
           </div>
+
+          {/* Analytics Dashboard Tab */}
+          {adminTab === 'analytics' && (
+            <div className="space-y-6 animate-fadeIn">
+              {(() => {
+                const summary = getAnalyticsSummary();
+                const topProducts = getTopProducts(5);
+
+                return (
+                  <>
+                    {/* Overview Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Total Revenue */}
+                      <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Total Revenue</h3>
+                          <span className="text-3xl">💰</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">R{summary.allTime.revenue.toFixed(2)}</p>
+                        <p className="text-sm text-gray-400 mt-2">All time</p>
+                      </div>
+
+                      {/* Total Orders */}
+                      <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Total Orders</h3>
+                          <span className="text-3xl">📦</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">{summary.allTime.purchases}</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          {summary.last7Days.purchases} in last 7 days
+                        </p>
+                      </div>
+
+                      {/* Page Views */}
+                      <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Page Views</h3>
+                          <span className="text-3xl">👁️</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">{summary.allTime.pageViews}</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          {summary.today.pageViews} today
+                        </p>
+                      </div>
+
+                      {/* Conversion Rate */}
+                      <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-white">Conversion Rate</h3>
+                          <span className="text-3xl">📈</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gradient">
+                          {summary.allTime.pageViews > 0
+                            ? ((summary.allTime.purchases / summary.allTime.pageViews) * 100).toFixed(1)
+                            : 0}%
+                        </p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          {summary.allTime.addToCarts} items added to cart
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Period Comparison */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                      <h2 className="text-2xl font-bold mb-6 text-gradient">Performance Overview</h2>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gold/20">
+                              <th className="text-left py-3 px-4 text-white font-semibold">Metric</th>
+                              <th className="text-right py-3 px-4 text-white font-semibold">Today</th>
+                              <th className="text-right py-3 px-4 text-white font-semibold">Last 7 Days</th>
+                              <th className="text-right py-3 px-4 text-white font-semibold">Last 30 Days</th>
+                              <th className="text-right py-3 px-4 text-white font-semibold">All Time</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b border-gold/10">
+                              <td className="py-3 px-4 text-gray-300">Revenue</td>
+                              <td className="text-right py-3 px-4 text-white font-semibold">R{summary.today.revenue.toFixed(2)}</td>
+                              <td className="text-right py-3 px-4 text-white font-semibold">R{summary.last7Days.revenue.toFixed(2)}</td>
+                              <td className="text-right py-3 px-4 text-white font-semibold">R{summary.last30Days.revenue.toFixed(2)}</td>
+                              <td className="text-right py-3 px-4 text-gradient font-bold">R{summary.allTime.revenue.toFixed(2)}</td>
+                            </tr>
+                            <tr className="border-b border-gold/10">
+                              <td className="py-3 px-4 text-gray-300">Orders</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.today.purchases}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last7Days.purchases}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last30Days.purchases}</td>
+                              <td className="text-right py-3 px-4 text-gradient font-bold">{summary.allTime.purchases}</td>
+                            </tr>
+                            <tr className="border-b border-gold/10">
+                              <td className="py-3 px-4 text-gray-300">Page Views</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.today.pageViews}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last7Days.pageViews}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last30Days.pageViews}</td>
+                              <td className="text-right py-3 px-4 text-gradient font-bold">{summary.allTime.pageViews}</td>
+                            </tr>
+                            <tr className="border-b border-gold/10">
+                              <td className="py-3 px-4 text-gray-300">Product Views</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.today.productViews}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last7Days.productViews}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last30Days.productViews}</td>
+                              <td className="text-right py-3 px-4 text-gradient font-bold">{summary.allTime.productViews}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-3 px-4 text-gray-300">Add to Cart</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.today.addToCarts}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last7Days.addToCarts}</td>
+                              <td className="text-right py-3 px-4 text-white">{summary.last30Days.addToCarts}</td>
+                              <td className="text-right py-3 px-4 text-gradient font-bold">{summary.allTime.addToCarts}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Top Products */}
+                    <div className="glass-morphism rounded-xl luxury-shadow p-6 border border-gold/20">
+                      <h2 className="text-2xl font-bold mb-6 text-gradient">Top Viewed Products</h2>
+                      {topProducts.length > 0 ? (
+                        <div className="space-y-4">
+                          {topProducts.map((item, index) => (
+                            <div key={item.productId} className="flex items-center justify-between p-4 bg-black/30 rounded-lg border border-gold/10">
+                              <div className="flex items-center gap-4">
+                                <span className="text-2xl font-bold text-gradient">#{index + 1}</span>
+                                {item.product && (
+                                  <>
+                                    <img
+                                      src={item.product.referenceImage || '/Final.png'}
+                                      alt={item.product.name}
+                                      className="w-16 h-16 object-cover rounded-lg"
+                                    />
+                                    <div>
+                                      <h3 className="font-semibold text-white">{item.product.name}</h3>
+                                      <p className="text-sm text-gray-400">{item.product.category}</p>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-gradient">{item.views}</p>
+                                <p className="text-sm text-gray-400">views</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <p className="text-gray-400">No product views yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Product Management Tab */}
           {adminTab === 'products' && (
